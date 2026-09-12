@@ -1,56 +1,58 @@
-export const LotusIcon = ({ className = "" }: { className?: string }) => (
-    <svg viewBox="0 0 120 110" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <g transform="translate(60,72)">
-            {([-60, -40, -20, 0, 20, 40, 60] as number[]).map((angle, i) => (
-                <ellipse
-                    key={i}
-                    rx="9"
-                    ry="34"
-                    transform={`rotate(${angle})`}
-                    opacity={Math.abs(angle) > 40 ? 0.55 : 0.9}
-                />
-            ))}
-            {([-78, 78] as number[]).map((angle, i) => (
-                <ellipse key={i + 10} rx="7" ry="26" transform={`rotate(${angle})`} opacity={0.35} />
-            ))}
-            <circle r="13" />
-        </g>
-    </svg>
-);
-
-export const DharmaChakra = ({ className = "" }: { className?: string }) => (
-    <svg viewBox="0 0 100 100" className={className} fill="none" stroke="currentColor" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="50" cy="50" r="46" strokeWidth="3" />
-        <circle cx="50" cy="50" r="32" />
-        <circle cx="50" cy="50" r="9" fill="currentColor" stroke="none" />
+export const AshokaCakra = ({ className = "" }: { className?: string }) => (
+    <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="46" stroke="currentColor" strokeWidth="3" />
+        <circle cx="50" cy="50" r="31" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="50" cy="50" r="9" fill="currentColor" />
         {Array.from({ length: 24 }, (_, i) => {
-            const angle = (i * 15 * Math.PI) / 180;
-            const inner = i % 2 === 0 ? 32 : 9;
+            const a = (i * 15 * Math.PI) / 180;
             return (
                 <line
                     key={i}
-                    x1={50 + inner * Math.cos(angle)}
-                    y1={50 + inner * Math.sin(angle)}
-                    x2={50 + 46 * Math.cos(angle)}
-                    y2={50 + 46 * Math.sin(angle)}
-                    strokeWidth={i % 2 === 0 ? 2 : 1}
-                    opacity={i % 2 === 0 ? 1 : 0.5}
+                    x1={50 + 9 * Math.cos(a)}
+                    y1={50 + 9 * Math.sin(a)}
+                    x2={50 + 31 * Math.cos(a)}
+                    y2={50 + 31 * Math.sin(a)}
+                    stroke="currentColor"
+                    strokeWidth="1.5"
                 />
             );
         })}
     </svg>
 );
 
-export const TrishulIcon = ({ className = "" }: { className?: string }) => (
-    <svg viewBox="0 0 64 110" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="32,2 25,26 39,26" />
-        <rect x="29.5" y="23" width="5" height="58" />
-        <polygon points="12,16 5,34 20,30" />
-        <rect x="10" y="27" width="4.5" height="26" transform="rotate(-13 12 40)" />
-        <polygon points="52,16 59,34 44,30" />
-        <rect x="49.5" y="27" width="4.5" height="26" transform="rotate(13 52 40)" />
-        <rect x="10" y="26" width="44" height="3.5" />
-        <rect x="29.5" y="81" width="5" height="22" />
-        <ellipse cx="32" cy="104" rx="11" ry="5" />
+export const LotusSmall = ({ className = "" }: { className?: string }) => (
+    <svg viewBox="0 0 80 60" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <g transform="translate(40,45)">
+            {([-50, -33, -17, 0, 17, 33, 50] as number[]).map((angle, i) => (
+                <ellipse
+                    key={i}
+                    rx="6"
+                    ry="22"
+                    transform={`rotate(${angle})`}
+                    opacity={Math.abs(angle) > 33 ? 0.45 : 0.82}
+                />
+            ))}
+            <circle r="8" />
+        </g>
     </svg>
+);
+
+export const TricolorStripe = ({ className = "" }: { className?: string }) => (
+    <div className={`flex h-[3px] ${className}`}>
+        <div className="flex-1 bg-[#FF9933]" />
+        <div className="flex-1 bg-white" />
+        <div className="flex-1 bg-[#138808]" />
+    </div>
+);
+
+export const DiamondDivider = ({ light = false }: { light?: boolean }) => (
+    <div className={`flex items-center gap-3 ${light ? "text-white/30" : "text-[#B85428]/30"}`}>
+        <div className="flex-1 h-px bg-current" />
+        <div className="flex gap-1.5 items-center">
+            <div className="w-1.5 h-1.5 rotate-45 bg-current opacity-50" />
+            <div className="w-2 h-2 rotate-45 bg-current opacity-80" />
+            <div className="w-1.5 h-1.5 rotate-45 bg-current opacity-50" />
+        </div>
+        <div className="flex-1 h-px bg-current" />
+    </div>
 );

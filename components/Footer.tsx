@@ -1,168 +1,121 @@
-import { DharmaChakra } from "./Symbols";
-
-const quickLinks = ["Home", "Our Mission", "Ideology", "Heritage", "Programs", "Join Us", "Donate"];
-
-const sacredSites = [
-    "Kashi Vishwanath",
-    "Ram Janmabhoomi",
-    "Kedarnath Dham",
-    "Mathura Vrindavan",
-    "Tirupati Balaji",
-    "Somnath Temple",
-    "Char Dham Yatra",
-];
+import { ArrowRight } from "lucide-react";
+import { AshokaCakra, TricolorStripe } from "./Symbols";
+import { forumCategories } from "@/data/forumData";
 
 export default function Footer() {
     return (
-        <footer className="bg-[#050D1F] text-white">
-            <div className="border-b border-white/8">
-                <div className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
-                    <div className="lg:col-span-1">
-                        <div className="flex items-center gap-3 mb-5">
-                            <span
-                                className="text-[#FF6B1A] text-4xl leading-none"
+        <footer className="bg-[#070D1E] text-white">
+            <TricolorStripe />
+            <div className="max-w-7xl mx-auto px-6 py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+                <div className="lg:col-span-1">
+                    <div className="flex items-center gap-3 mb-5">
+                        <AshokaCakra className="w-9 h-9 text-[#C8971A]" />
+                        <div>
+                            <div
+                                className="text-white font-bold text-sm tracking-[0.12em] uppercase leading-tight"
+                                style={{ fontFamily: "'Fraunces', serif" }}
+                            >
+                                Indic Civilizational Forum
+                            </div>
+                            <div
+                                className="text-[#C8971A]/60 text-[10px] tracking-widest mt-0.5"
                                 style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}
                             >
-                                ॐ
-                            </span>
-                            <div>
-                                <div
-                                    className="text-white font-bold text-sm tracking-[0.12em] uppercase leading-tight"
-                                    style={{ fontFamily: "'Cinzel', serif" }}
-                                >
-                                    Sanatan Dharma Sangha
-                                </div>
-                                <div
-                                    className="text-[#D4A017] text-xs mt-0.5"
-                                    style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}
-                                >
-                                    सनातन धर्म संघ
-                                </div>
+                                भारतीय सभ्यता संगम
                             </div>
                         </div>
-                        <p className="text-white/45 text-sm leading-relaxed mb-6">
-                            Guardians of the eternal Dharma. Builders of a glorious Bharat.
-                            United in our devotion to Bharat Mata and the Sanatan way of life.
-                        </p>
-                        <div
-                            className="text-[#D4A017] text-xl"
-                            style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}
-                        >
-                            वसुधैव कुटुम्बकम्
-                        </div>
-                        <div className="text-white/30 text-xs mt-1">The world is one family</div>
                     </div>
-
-                    <div>
-                        <h4
-                            className="text-[#E8550A] text-xs tracking-[0.3em] uppercase mb-6"
-                            style={{ fontFamily: "'Cinzel', serif" }}
-                        >
-                            Quick Links
-                        </h4>
-                        <ul className="space-y-3">
-                            {quickLinks.map((link) => (
-                                <li key={link}>
-                                    <a
-                                        href="#"
-                                        className="text-white/50 hover:text-[#FF6B1A] text-sm transition-colors flex items-center gap-2"
-                                    >
-                                        <span className="text-[#E8550A]/40">›</span> {link}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
+                    <p className="text-white/40 text-sm leading-relaxed mb-5">
+                        A platform for rigorous, open, and pluralistic engagement with India&apos;s civilizational heritage.
+                    </p>
+                    <div className="text-[#C8971A]/70 text-sm italic" style={{ fontFamily: "'Spectral', serif" }}>
+                        &ldquo;Sa vidya ya vimuktaye&rdquo;
                     </div>
+                    <div className="text-white/25 text-xs mt-1">Knowledge is that which liberates. &mdash; Vishnu Purana</div>
+                </div>
 
-                    <div>
-                        <h4
-                            className="text-[#E8550A] text-xs tracking-[0.3em] uppercase mb-6"
-                            style={{ fontFamily: "'Cinzel', serif" }}
-                        >
-                            Sacred Bharat
-                        </h4>
-                        <ul className="space-y-3">
-                            {sacredSites.map((site) => (
-                                <li key={site}>
-                                    <a
-                                        href="#"
-                                        className="text-white/50 hover:text-[#FF6B1A] text-sm transition-colors flex items-center gap-2"
-                                    >
-                                        <span className="text-[#E8550A]/40">›</span> {site}
-                                    </a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div>
-                        <h4
-                            className="text-[#E8550A] text-xs tracking-[0.3em] uppercase mb-6"
-                            style={{ fontFamily: "'Cinzel', serif" }}
-                        >
-                            Contact
-                        </h4>
-                        <div className="space-y-5 text-white/50 text-sm">
-                            <div>
-                                <div className="text-white/25 text-[10px] uppercase tracking-widest mb-1">
-                                    Head Office
-                                </div>
-                                <div className="leading-relaxed">
-                                    Bharat Bhavan, Sector 15
-                                    <br />
-                                    New Delhi — 110 001
-                                </div>
-                            </div>
-                            <div>
-                                <div className="text-white/25 text-[10px] uppercase tracking-widest mb-1">
-                                    Email
-                                </div>
-                                <div>sangha@sanatandharma.in</div>
-                            </div>
-                            <div>
-                                <div className="text-white/25 text-[10px] uppercase tracking-widest mb-1">
-                                    Helpline
-                                </div>
-                                <div>+91 11 2345 6789</div>
-                            </div>
-                        </div>
-                        <div className="flex gap-2 mt-6">
-                            {["YT", "TW", "FB", "IG"].map((soc) => (
-                                <a
-                                    key={soc}
-                                    href="#"
-                                    className="w-9 h-9 border border-white/15 flex items-center justify-center text-white/40 hover:border-[#E8550A] hover:text-[#FF6B1A] transition-all text-[11px]"
-                                    style={{ fontFamily: "'Cinzel', serif" }}
-                                >
-                                    {soc}
+                <div>
+                    <h4 className="text-[#B85428] text-xs font-semibold tracking-[0.3em] uppercase mb-5">Explore</h4>
+                    <ul className="space-y-3">
+                        {["Heritage", "Ideas & Philosophy", "Leaders & Thinkers", "Knowledge Systems", "Forum", "About Us"].map((l) => (
+                            <li key={l}>
+                                <a href="#" className="text-white/45 hover:text-[#C8971A] text-sm transition-colors flex items-center gap-2">
+                                    <span className="text-[#B85428]/40">›</span> {l}
                                 </a>
-                            ))}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 className="text-[#B85428] text-xs font-semibold tracking-[0.3em] uppercase mb-5">Forum Categories</h4>
+                    <ul className="space-y-3">
+                        {forumCategories.map((c) => (
+                            <li key={c.id}>
+                                <a href="#" className="text-white/45 hover:text-[#C8971A] text-sm transition-colors flex items-center gap-2">
+                                    <span className="text-[#B85428]/40">›</span> {c.name}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 className="text-[#B85428] text-xs font-semibold tracking-[0.3em] uppercase mb-5">Connect</h4>
+                    <div className="space-y-4 text-white/45 text-sm">
+                        <div>
+                            <div className="text-white/20 text-[10px] uppercase tracking-widest mb-1">Email</div>
+                            <div>hello@indicforum.in</div>
                         </div>
+                        <div>
+                            <div className="text-white/20 text-[10px] uppercase tracking-widest mb-1">Registered</div>
+                            <div>New Delhi, India</div>
+                        </div>
+                        <div>
+                            <div className="text-white/20 text-[10px] uppercase tracking-widest mb-1">Newsletter</div>
+                            <div className="flex mt-1">
+                                <input
+                                    type="email"
+                                    placeholder="your@email.com"
+                                    className="flex-1 bg-white/8 border border-white/15 px-3 py-2 text-xs text-white placeholder-white/25 focus:outline-none focus:border-[#B85428] transition-colors"
+                                />
+                                <button className="bg-[#B85428] hover:bg-[#A04820] px-3 py-2 transition-colors cursor-pointer" aria-label="Subscribe">
+                                    <ArrowRight className="w-3.5 h-3.5 text-white" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 mt-6">
+                        {["TW", "YT", "IN", "TG"].map((s) => (
+                            <a
+                                key={s}
+                                href="#"
+                                className="w-8 h-8 border border-white/12 flex items-center justify-center text-white/35 hover:border-[#C8971A] hover:text-[#C8971A] transition-all text-[11px] font-semibold"
+                            >
+                                {s}
+                            </a>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            <div className="h-[2px] bg-gradient-to-r from-transparent via-[#E8550A] to-transparent opacity-60" />
-
-            <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="text-white/25 text-xs">
-                    &copy; 2026 Sanatan Dharma Sangha. All rights reserved.
-                </div>
-                <div className="flex items-center gap-3 text-white/30 text-xs text-center">
-                    <DharmaChakra className="w-4 h-4 text-[#E8550A]/50 shrink-0" />
-                    <span>Jai Bharat Mata &nbsp;&middot;&nbsp; Jai Shri Ram &nbsp;&middot;&nbsp; Har Har Mahadev</span>
-                    <DharmaChakra className="w-4 h-4 text-[#E8550A]/50 shrink-0" />
-                </div>
-                <div className="flex gap-5">
-                    {["Privacy", "Terms", "Sitemap"].map((l) => (
-                        <a
-                            key={l}
-                            href="#"
-                            className="text-white/25 hover:text-white/55 text-xs transition-colors"
-                        >
-                            {l}
-                        </a>
-                    ))}
+            <div className="border-t border-white/8">
+                <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="text-white/20 text-xs">
+                        &copy; 2026 Indic Civilizational Forum. All rights reserved.
+                    </div>
+                    <div className="flex items-center gap-3 text-white/20 text-xs">
+                        <AshokaCakra className="w-4 h-4 text-[#B85428]/40" />
+                        <span>Satyameva Jayate &mdash; Truth Alone Triumphs</span>
+                        <AshokaCakra className="w-4 h-4 text-[#B85428]/40" />
+                    </div>
+                    <div className="flex gap-5">
+                        {["Privacy", "Terms", "Sitemap"].map((l) => (
+                            <a key={l} href="#" className="text-white/20 hover:text-white/50 text-xs transition-colors">
+                                {l}
+                            </a>
+                        ))}
+                    </div>
                 </div>
             </div>
         </footer>

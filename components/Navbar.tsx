@@ -1,14 +1,25 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
-import { navLinks } from "@/data/siteData";
+import { Menu, X, Plus, User as UserIcon, LogOut } from "lucide-react";
+import { AshokaCakra, TricolorStripe } from "./Symbols";
+import type { PageState } from "@/types/forum";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavbarProps {
-    onNavigate: (id: string) => void;
+    pageState: PageState;
+    onNavigate: (state: PageState) => void;
+    onScrollToSection: (id: string) => void;
+    onOpenNewDiscussion: () => void;
 }
 
-export default function Navbar({ onNavigate }: NavbarProps) {
+export default function Navbar({
+    pageState,
+    onNavigate,
+    onScrollToSection,
+    onOpenNewDiscussion,
+}: NavbarProps) {
+    const { user, logout, requireAuth } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
@@ -18,91 +29,72 @@ export default function Navbar({ onNavigate }: NavbarProps) {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    const handleNavClick = (id: string) => {
-        onNavigate(id);
-        setMenuOpen(false);
-    };
+    const isHome = pageState.view === "home";
 
     return (
         <nav
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-[#0D1B3E]/96 backdrop-blur-md shadow-2xl" : "bg-transparent"
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled || !isHome ? "bg-[#0F1C3F]/97 backdrop-blur-md shadow-xl" : "bg-transparent"
                 }`}
         >
-            <div className="h-[3px] bg-gradient-to-r from-[#E8550A] via-[#D4A017] to-[#E8550A]" />
-            <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-                <button onClick={() => handleNavClick("home")} className="flex items-center gap-3 group text-left">
-                    <span
-                        className="text-[#FF6B1A] text-4xl leading-none select-none"
-                        style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}
-                    >
-                        ॐ
-                    </span>
+            <TricolorStripe />
+            <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+                <button onClick={() => onNavigate({ view: "home" })} className="flex items-center gap-3 text-left cursor-pointer">
+                    <AshokaCakra className="w-8 h-8 text-[#C8971A] group-hover:text-[#B85428] transition-colors" />
                     <div>
-                        <div
-                            className="text-white font-bold text-base tracking-[0.2em] uppercase leading-tight"
-                            style={{ fontFamily: "'Cinzel', serif" }}
-                        >
-                            Sanatan Dharma Sangha
+                        <div className="text-white font-bold text-sm tracking-[0.15em] uppercase leading-tight" style={{ fontFamily: "'Fraunces', serif" }}>
+                            Indic Civilizational Forum
                         </div>
-                        <div
-                            className="text-[#D4A017] text-xs tracking-wide"
-                            style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}
-                        >
-                            सनातन धर्म संघ
+                        <div className="text-[#C8971A]/70 text-[10px] tracking-widest uppercase">
+                            भारतीय सभ्यता संगम
                         </div>
                     </div>
                 </button>
 
-                <div className="hidden lg:flex items-center gap-7">
-                    {navLinks.map((l) => (
-                        <button
-                            key={l.id}
-                            onClick={() => handleNavClick(l.id)}
-                            className="text-white/75 hover:text-[#FF6B1A] text-xs tracking-[0.2em] uppercase transition-colors"
-                            style={{ fontFamily: "'Cinzel', serif" }}
-                        >
-                            {l.label}
-                        </button>
-                    ))}
+                <div className="hidden lg:flex items-center gap-6">
+                    <button onClick={() => onNavigate({ view: "home" })} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Home</button>
+                    <button onClick={() => onScrollToSection("heritage")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Heritage</button>
+                    <button onClick={() => onScrollToSection("ideas")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Ideas</button>
+                    <button onClick={() => onNavigate({ view: "forum" })} className={`text-xs font-semibold tracking-[0.15em] uppercase cursor-pointer ${pageState.view === "forum" ? "text-[#C8971A]" : "text-white/65 hover:text-white"}`}>Forum</button>
+                    <button onClick={() => onScrollToSection("about")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">About</button>
+
                     <button
-                        onClick={() => handleNavClick("join")}
-                        className="bg-[#E8550A] hover:bg-[#FF6B1A] text-white text-xs px-6 py-2.5 tracking-[0.15em] uppercase transition-colors ml-2"
-                        style={{ fontFamily: "'Cinzel', serif" }}
+                        onClick={() => requireAuth(onOpenNewDiscussion)}
+                        className="flex items-center gap-1.5 bg-[#B85428] hover:bg-[#A04820] text-white text-xs font-semibold px-4 py-2.5 tracking-wide transition-colors ml-2 cursor-pointer"
                     >
-                        Join Now
+                        <Plus className="w-3.5 h-3.5" /> Discuss
                     </button>
+
+                    {user ? (
+                        <div className="flex items-center gap-2.5 ml-2 border-l border-white/10 pl-4">
+                            <div
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                style={{ backgroundColor: user.bg }}
+                                title={user.email}
+                            >
+                                {user.initials}
+                            </div>
+                            <button
+                                onClick={logout}
+                                className="text-white/40 hover:text-white p-1 cursor-pointer"
+                                title="Sign out"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => requireAuth(() => { })}
+                            className="text-white/80 hover:text-white text-xs font-semibold border border-white/20 px-3 py-2 rounded-sm cursor-pointer ml-2 flex items-center gap-1.5"
+                        >
+                            <UserIcon className="w-3.5 h-3.5" /> Sign In
+                        </button>
+                    )}
                 </div>
 
-                <button
-                    className="lg:hidden text-white p-1"
-                    onClick={() => setMenuOpen((o) => !o)}
-                    aria-label="Toggle menu"
-                >
+                <button className="lg:hidden text-white p-1 cursor-pointer" onClick={() => setMenuOpen((o) => !o)}>
                     {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                 </button>
             </div>
-
-            {menuOpen && (
-                <div className="lg:hidden bg-[#0D1B3E]/98 px-6 py-6 flex flex-col gap-1 border-t border-white/10">
-                    {navLinks.map((l) => (
-                        <button
-                            key={l.id}
-                            onClick={() => handleNavClick(l.id)}
-                            className="text-white/75 hover:text-[#FF6B1A] text-left py-3 text-sm tracking-[0.15em] uppercase border-b border-white/10 transition-colors"
-                            style={{ fontFamily: "'Cinzel', serif" }}
-                        >
-                            {l.label}
-                        </button>
-                    ))}
-                    <button
-                        onClick={() => handleNavClick("join")}
-                        className="mt-4 bg-[#E8550A] text-white py-3 text-sm tracking-[0.2em] uppercase"
-                        style={{ fontFamily: "'Cinzel', serif" }}
-                    >
-                        Join the Sangha
-                    </button>
-                </div>
-            )}
         </nav>
     );
 }
