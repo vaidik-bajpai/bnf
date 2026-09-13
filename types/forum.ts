@@ -3,7 +3,19 @@ import type { ReactNode } from "react";
 export type PageState =
     | { view: "home" }
     | { view: "forum" }
+    | { view: "megathreads" }
+    | { view: "megathread"; id: string }
+    | { view: "discussion"; id: string }
     | { view: "thread"; id: string };
+
+export interface Author {
+    id?: string;
+    name: string;
+    username?: string;
+    initials: string;
+    bg: string;
+    image?: string;
+}
 
 export interface Leader {
     name: string;
@@ -22,23 +34,71 @@ export interface ForumCategory {
     color: string;
 }
 
-export interface Discussion {
+export interface MegaThread {
     id: string;
     title: string;
+    description: string;
+    category: string;
+    categoryLabel?: string;
+    createdAt: string;
+    updatedAt: string;
+    discussionCount: number;
+    participantCount: number;
+    featured?: boolean;
+    tags?: string[];
+    bannerGradient?: string;
+}
+
+export interface Discussion {
+    id: string;
+    megaThreadId?: string;
+    title: string;
     excerpt: string;
-    author: { name: string; initials: string; bg: string };
+    description?: string;
+    body?: string;
+    authorId?: string;
+    author: Author;
     category: string;
     categoryLabel: string;
+    categoryColor?: string;
     replies: number;
+    replyCount?: number;
     views: number;
+    viewCount?: number;
     lastActivity: string;
+    createdAt?: string;
+    updatedAt?: string;
     pinned?: boolean;
     tags: string[];
+    likes?: number;
+    isLiked?: boolean;
+    likedBy?: Author[];
+}
+
+export interface Post {
+    id: string;
+    discussionId: string;
+    authorId?: string;
+    author: Author;
+    content: string;
+    createdAt: string;
+    updatedAt?: string;
+    replyToPostId: string | null;
+    likes?: number;
+    isLiked?: boolean;
+    likedBy?: Author[];
+}
+
+export interface ReplyReference {
+    postId: string;
+    authorName: string;
+    authorUsername?: string;
+    excerpt: string;
 }
 
 export interface ReplyData {
     id: string;
-    author: { name: string; initials: string; bg: string };
+    author: Author;
     content: string;
     timestamp: string;
     likes: number;

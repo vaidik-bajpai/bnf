@@ -29,7 +29,7 @@ export default function Navbar({
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    const isHome = pageState.view === "home";
+    const isHome = pageState.view === "home" && !user;
 
     return (
         <nav
@@ -38,7 +38,10 @@ export default function Navbar({
         >
             <TricolorStripe />
             <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
-                <button onClick={() => onNavigate({ view: "home" })} className="flex items-center gap-3 text-left cursor-pointer">
+                <button
+                    onClick={() => onNavigate({ view: user ? "forum" : "home" })}
+                    className="flex items-center gap-3 text-left cursor-pointer"
+                >
                     <AshokaCakra className="w-8 h-8 text-[#C8971A] group-hover:text-[#B85428] transition-colors" />
                     <div>
                         <div className="text-white font-bold text-sm tracking-[0.15em] uppercase leading-tight" style={{ fontFamily: "'Fraunces', serif" }}>
@@ -51,11 +54,34 @@ export default function Navbar({
                 </button>
 
                 <div className="hidden lg:flex items-center gap-6">
-                    <button onClick={() => onNavigate({ view: "home" })} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Home</button>
-                    <button onClick={() => onScrollToSection("heritage")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Heritage</button>
-                    <button onClick={() => onScrollToSection("ideas")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Ideas</button>
-                    <button onClick={() => onNavigate({ view: "forum" })} className={`text-xs font-semibold tracking-[0.15em] uppercase cursor-pointer ${pageState.view === "forum" ? "text-[#C8971A]" : "text-white/65 hover:text-white"}`}>Forum</button>
-                    <button onClick={() => onScrollToSection("about")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">About</button>
+                    {user ? (
+                        <>
+                            <button
+                                onClick={() => onNavigate({ view: "forum" })}
+                                className={`text-xs font-semibold tracking-[0.15em] uppercase cursor-pointer ${
+                                    pageState.view === "forum" ? "text-[#C8971A]" : "text-white/65 hover:text-white"
+                                }`}
+                            >
+                                Discussions
+                            </button>
+                            <button
+                                onClick={() => onNavigate({ view: "megathreads" })}
+                                className={`text-xs font-semibold tracking-[0.15em] uppercase cursor-pointer ${
+                                    pageState.view === "megathreads" ? "text-[#C8971A]" : "text-white/65 hover:text-white"
+                                }`}
+                            >
+                                MegaThreads
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button onClick={() => onNavigate({ view: "home" })} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Home</button>
+                            <button onClick={() => onScrollToSection("heritage")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Heritage</button>
+                            <button onClick={() => onScrollToSection("ideas")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">Ideas</button>
+                            <button onClick={() => onNavigate({ view: "forum" })} className={`text-xs font-semibold tracking-[0.15em] uppercase cursor-pointer ${pageState.view === "forum" ? "text-[#C8971A]" : "text-white/65 hover:text-white"}`}>Forum</button>
+                            <button onClick={() => onScrollToSection("about")} className="text-xs font-semibold tracking-[0.15em] uppercase text-white/65 hover:text-white cursor-pointer">About</button>
+                        </>
+                    )}
 
                     <button
                         onClick={() => requireAuth(onOpenNewDiscussion)}

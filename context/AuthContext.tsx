@@ -1,7 +1,7 @@
 // context/AuthContext.tsx
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useRef, useMemo, useEffect } from 'react';
 import { SessionProvider, useSession, signIn, signOut } from 'next-auth/react';
 
 export interface AuthUser {
@@ -16,6 +16,8 @@ export interface AuthUser {
 
 interface AuthContextType {
     user: AuthUser | null;
+    status: "loading" | "authenticated" | "unauthenticated";
+    isLoading: boolean;
     loginWithGoogle: () => void;
     logout: () => void;
     requireAuth: (action: () => void) => void;
@@ -28,20 +30,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 function AuthStateBridge({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+    const pendingActionRef = useRef<(() => void) | null>(null);
 
-    const googleUser = session?.user;
-    const user: AuthUser | null = googleUser
-        ? {
+    const user: AuthUser | null = useMemo(() => {
+        const googleUser = session?.user;
+        if (!googleUser) return null;
+        const userExt = googleUser as (typeof googleUser & { username?: string; initials?: string; bg?: string });
+        return {
             id: googleUser.id as string,
             name: googleUser.name || "Forum Member",
             email: googleUser.email || "",
-            username: (googleUser as any).username || (googleUser.email?.split("@")[0] || "member"),
+            username: userExt?.username || (googleUser.email?.split("@")[0] || "member"),
             image: googleUser.image,
-            initials: (googleUser as any).initials || "U",
-            bg: (googleUser as any).bg || "#B85428",
+            initials: userExt?.initials || "U",
+            bg: userExt?.bg || "#B85428",
+        };
+    }, [session?.user]);
+
+    useEffect(() => {
+        if (user && pendingActionRef.current) {
+            const action = pendingActionRef.current;
+            pendingActionRef.current = null;
+            action();
         }
-        : null;
+    }, [user]);
 
     const loginWithGoogle = async () => {
         await signIn("google");
@@ -55,7 +67,7 @@ function AuthStateBridge({ children }: { children: React.ReactNode }) {
         if (user) {
             action();
         } else {
-            setPendingAction(() => action);
+            pendingActionRef.current = action;
             setIsAuthModalOpen(true);
         }
     };
@@ -64,13 +76,15 @@ function AuthStateBridge({ children }: { children: React.ReactNode }) {
         <AuthContext.Provider
             value={{
                 user,
+                status,
+                isLoading: status === "loading",
                 loginWithGoogle,
                 logout,
                 requireAuth,
                 isAuthModalOpen,
                 closeAuthModal: () => {
                     setIsAuthModalOpen(false);
-                    setPendingAction(null);
+                    pendingActionRef.current = null;
                 },
             }}
         >

@@ -1,41 +1,83 @@
-// components/modals/NewDiscussionModal.tsx
 'use client';
 
-import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Loader2, Layers } from "lucide-react";
 import { TricolorStripe } from "../Symbols";
-import { forumCategories } from "@/data/forumData";
+import { forumCategories, getMegaThreads, addMockDiscussion } from "@/data/forumData";
 import { createDiscussion } from "@/app/actions/forum";
 import { useAuth } from "@/context/AuthContext";
 
 interface NewDiscussionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreated?: () => void;
+    onCreated?: (newDiscussionId?: string) => void;
+    defaultMegaThreadId?: string;
 }
 
 export default function NewDiscussionModal({
     isOpen,
     onClose,
     onCreated,
+    defaultMegaThreadId,
 }: NewDiscussionModalProps) {
     const { user } = useAuth();
+    const megaThreads = getMegaThreads();
+
+    const initialMt = defaultMegaThreadId || (megaThreads[0]?.id ?? "");
+    const [megaThreadId, setMegaThreadId] = useState(initialMt);
     const [title, setTitle] = useState("");
-    const [category, setCategory] = useState("");
+    const [category, setCategory] = useState(() => {
+        const mt = megaThreads.find((m) => m.id === initialMt);
+        return mt?.category || "";
+    });
     const [body, setBody] = useState("");
     const [tagsInput, setTagsInput] = useState("");
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+    // Sync defaultMegaThreadId if passed or changes
+    useEffect(() => {
+        let active = true;
+        Promise.resolve().then(() => {
+            if (!active) return;
+            if (defaultMegaThreadId) {
+                setMegaThreadId(defaultMegaThreadId);
+                const mt = megaThreads.find((m) => m.id === defaultMegaThreadId);
+                if (mt) {
+                    setCategory(mt.category);
+                }
+            }
+        });
+        return () => {
+            active = false;
+        };
+    }, [defaultMegaThreadId, megaThreads]);
+
+    // When user changes MegaThread, optionally sync category
+    const handleMegaThreadChange = (id: string) => {
+        setMegaThreadId(id);
+        const mt = megaThreads.find((m) => m.id === id);
+        if (mt) {
+            setCategory(mt.category);
+        }
+    };
+
     if (!isOpen) return null;
+
+    const selectedMegaThread = megaThreads.find((m) => m.id === megaThreadId);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setErrorMsg(null);
 
-        if (!title.trim() || !category || !body.trim()) {
-            setErrorMsg("Please fill in Category, Title, and Content.");
+        if (!megaThreadId) {
+            setErrorMsg("Please select an anchoring MegaThread.");
+            return;
+        }
+
+        if (!title.trim() || !body.trim()) {
+            setErrorMsg("Please provide both a discussion title and substantive content.");
             return;
         }
 
@@ -47,19 +89,53 @@ export default function NewDiscussionModal({
                 .map((t) => t.trim().toLowerCase())
                 .filter(Boolean);
 
-            await createDiscussion({
+            const authorData = user
+                ? {
+                      name: user.name || "Member",
+                      username: user.username || user.name?.toLowerCase().replace(/\s+/g, "_") || "scholar",
+                      initials: user.initials || "ME",
+                      bg: user.bg || "#B85428",
+                  }
+                : {
+                      name: "Guest Scholar",
+                      username: "scholar",
+                      initials: "GS",
+                      bg: "#2D6A4F",
+                  };
+
+            // Add to mock repository
+            const newDiscussion = addMockDiscussion({
                 title: title.trim(),
                 body: body.trim(),
-                categoryId: category,
+                megaThreadId,
+                categoryId: category || selectedMegaThread?.category || "history",
                 tags: parsedTags,
+                author: authorData,
             });
 
+            // If database action is available, try it gracefully
+            let finalDiscussionId = newDiscussion.id;
+            try {
+                const dbDisc = await createDiscussion({
+                    title: title.trim(),
+                    body: body.trim(),
+                    megaThreadId,
+                    categoryId: category || selectedMegaThread?.category || "history",
+                    tags: parsedTags,
+                    authorId: user?.id,
+                });
+                if (dbDisc && "id" in dbDisc && dbDisc.id) {
+                    finalDiscussionId = dbDisc.id;
+                }
+            } catch {
+                // Expected in mock mode if DATABASE_URL is not set
+            }
+
             setTitle("");
-            setCategory("");
             setBody("");
             setTagsInput("");
 
-            if (onCreated) onCreated();
+            if (onCreated) onCreated(finalDiscussionId);
             onClose();
         } catch (err) {
             console.error("Failed to publish discussion:", err);
@@ -70,16 +146,19 @@ export default function NewDiscussionModal({
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
             <div
                 className="bg-white w-full max-w-2xl shadow-2xl overflow-hidden"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
                 <div className="bg-[#0F1C3F] px-7 py-5 flex items-center justify-between">
                     <div>
-                        <div className="text-white font-semibold text-lg tracking-tight">Start a Discussion</div>
-                        <div className="text-white/50 text-sm mt-0.5">
-                            Posting as <span className="text-[#C8971A]">@{user?.username || user?.name}</span>
+                        <div className="text-white font-semibold text-lg tracking-tight flex items-center gap-2">
+                            <Layers className="w-5 h-5 text-[#C8971A]" />
+                            <span>Start a Discussion</span>
+                        </div>
+                        <div className="text-white/50 text-xs mt-0.5">
+                            Posting as <span className="text-[#C8971A]">@{user?.username || user?.name || "guest_scholar"}</span>
                         </div>
                     </div>
                     <button
@@ -99,6 +178,44 @@ export default function NewDiscussionModal({
                         </div>
                     )}
 
+                    {/* MegaThread Selection */}
+                    <div>
+                        <label className="block text-xs font-semibold text-[#6B5B4E] uppercase tracking-widest mb-1.5 flex items-center justify-between">
+                            <span>MegaThread *</span>
+                            {defaultMegaThreadId && (
+                                <span className="text-[10px] text-[#B85428] font-normal normal-case">
+                                    Pre-selected from context
+                                </span>
+                            )}
+                        </label>
+                        {defaultMegaThreadId && selectedMegaThread ? (
+                            <div className="border border-[#EDE8DF] bg-[#FAFAF7] px-3.5 py-2.5 text-sm text-[#1C1917] flex items-center justify-between">
+                                <span className="font-semibold flex items-center gap-2">
+                                    <Layers className="w-4 h-4 text-[#B85428]" />
+                                    {selectedMegaThread.title}
+                                </span>
+                                <span className="text-xs text-[#9E8F85]">
+                                    {selectedMegaThread.categoryLabel}
+                                </span>
+                            </div>
+                        ) : (
+                            <select
+                                required
+                                value={megaThreadId}
+                                onChange={(e) => handleMegaThreadChange(e.target.value)}
+                                className="w-full border border-[#EDE8DF] px-3.5 py-2.5 text-[#1C1917] focus:outline-none focus:border-[#B85428] text-sm bg-white"
+                            >
+                                <option value="">Select a MegaThread</option>
+                                {megaThreads.map((m) => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.title} ({m.categoryLabel || m.category})
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
+                    {/* Category Selection */}
                     <div>
                         <label className="block text-xs font-semibold text-[#6B5B4E] uppercase tracking-widest mb-1.5">
                             Category *
@@ -118,6 +235,7 @@ export default function NewDiscussionModal({
                         </select>
                     </div>
 
+                    {/* Discussion Title */}
                     <div>
                         <label className="block text-xs font-semibold text-[#6B5B4E] uppercase tracking-widest mb-1.5">
                             Discussion Title *
@@ -127,11 +245,12 @@ export default function NewDiscussionModal({
                             required
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="A clear, evocative civilizational topic"
+                            placeholder="A clear, evocative civilizational topic or question..."
                             className="w-full border border-[#EDE8DF] px-3.5 py-2.5 text-[#1C1917] placeholder-[#9E8F85] focus:outline-none focus:border-[#B85428] text-sm"
                         />
                     </div>
 
+                    {/* Content */}
                     <div>
                         <label className="block text-xs font-semibold text-[#6B5B4E] uppercase tracking-widest mb-1.5">
                             Discussion Content *
@@ -141,41 +260,44 @@ export default function NewDiscussionModal({
                             rows={5}
                             value={body}
                             onChange={(e) => setBody(e.target.value)}
-                            placeholder="Introduce the question or thesis, cite context, and invite perspectives..."
-                            className="w-full border border-[#EDE8DF] px-3.5 py-2.5 text-[#1C1917] placeholder-[#9E8F85] focus:outline-none focus:border-[#B85428] text-sm resize-none"
+                            placeholder="Introduce the question or thesis, cite classical context, and invite perspectives..."
+                            className="w-full border border-[#EDE8DF] px-3.5 py-2.5 text-[#1C1917] placeholder-[#9E8F85] focus:outline-none focus:border-[#B85428] text-sm resize-none leading-relaxed"
+                            style={{ fontFamily: "'Spectral', Georgia, serif" }}
                         />
                     </div>
 
+                    {/* Tags */}
                     <div>
                         <label className="block text-xs font-semibold text-[#6B5B4E] uppercase tracking-widest mb-1.5">
-                            Tags (comma-separated)
+                            Tags (comma-separated, optional)
                         </label>
                         <input
                             type="text"
                             value={tagsInput}
                             onChange={(e) => setTagsInput(e.target.value)}
-                            placeholder="e.g. epics, sanskrit, astronomy, architecture"
+                            placeholder="e.g. epics, sanskrit, astronomy, architecture, chanakya"
                             className="w-full border border-[#EDE8DF] px-3.5 py-2.5 text-[#1C1917] placeholder-[#9E8F85] focus:outline-none focus:border-[#B85428] text-sm"
                         />
                     </div>
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-3 pt-3">
                         <button
                             type="button"
                             disabled={isSubmitting}
                             onClick={onClose}
-                            className="flex-1 py-3 border border-[#EDE8DF] text-[#6B5B4E] hover:border-[#B85428] text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                            className="flex-1 py-3 border border-[#EDE8DF] text-[#6B5B4E] hover:border-[#B85428] text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex-1 py-3 bg-[#B85428] hover:bg-[#A04820] text-white text-sm font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-1 py-3 bg-[#B85428] hover:bg-[#A04820] text-white text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm"
                         >
                             {isSubmitting ? (
                                 <>
-                                    <Loader2 className="w-4 h-4 animate-spin" /> Publishing...
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <span>Publishing...</span>
                                 </>
                             ) : (
                                 "Publish Discussion"

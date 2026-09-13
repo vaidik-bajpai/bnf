@@ -8,19 +8,21 @@ generator client {
 }
 
 model User {
-  id            String       @id @default(cuid())
-  name          String?
-  username      String?      @unique
-  email         String?      @unique
-  emailVerified DateTime?
-  image         String?
-  initials      String?
-  bg            String       @default("#B85428")
-  accounts      Account[]
-  sessions      Session[]
-  threads       Discussion[]
-  replies       Reply[]
-  createdAt     DateTime     @default(now())
+  id              String           @id @default(cuid())
+  name            String?
+  username        String?          @unique
+  email           String?          @unique
+  emailVerified   DateTime?
+  image           String?
+  initials        String?
+  bg              String           @default("#B85428")
+  accounts        Account[]
+  sessions        Session[]
+  discussions     Discussion[]
+  posts           Post[]
+  discussionLikes DiscussionLike[]
+  postLikes       PostLike[]
+  createdAt       DateTime         @default(now())
 }
 
 model Account {
@@ -59,42 +61,85 @@ model VerificationToken {
 }
 
 model Category {
-  id          String       @id
+  id          String        @id
   name        String
-  count       Int          @default(0)
+  count       Int           @default(0)
   color       String
+  megaThreads MegaThread[]
   discussions Discussion[]
 }
 
-model Discussion {
-  id           String     @id @default(cuid())
-  title        String
-  excerpt      String
-  body         String
-  categoryId   String
-  category     Category   @relation(fields: [categoryId], references: [id])
-  authorId     String
-  author       User       @relation(fields: [authorId], references: [id])
-  pinned       Boolean    @default(false)
-  views        Int        @default(0)
-  likes        Int        @default(0)
-  tags         String[]
-  replies      Reply[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  lastActivity DateTime   @default(now())
+model MegaThread {
+  id               String       @id @default(cuid())
+  title            String
+  description      String
+  categoryId       String
+  category         Category     @relation(fields: [categoryId], references: [id])
+  featured         Boolean      @default(false)
+  tags             String[]
+  discussionCount  Int          @default(0)
+  participantCount Int          @default(0)
+  discussions      Discussion[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
-model Reply {
+model Discussion {
+  id              String           @id @default(cuid())
+  title           String
+  excerpt         String
+  body            String
+  megaThreadId    String?
+  megaThread      MegaThread?      @relation(fields: [megaThreadId], references: [id], onDelete: SetNull)
+  categoryId      String
+  category        Category         @relation(fields: [categoryId], references: [id])
+  authorId        String
+  author          User             @relation(fields: [authorId], references: [id])
+  pinned          Boolean          @default(false)
+  views           Int              @default(0)
+  likes           Int              @default(0)
+  tags            String[]
+  posts           Post[]
+  discussionLikes DiscussionLike[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  lastActivity    DateTime         @default(now())
+}
+
+model Post {
+  id               String     @id @default(cuid())
+  content          String
+  discussionId     String
+  discussion       Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  authorId         String
+  author           User       @relation(fields: [authorId], references: [id])
+  replyToPostId    String?
+  replyToPost      Post?      @relation("PostReferences", fields: [replyToPostId], references: [id], onDelete: SetNull)
+  referencingPosts Post[]     @relation("PostReferences")
+  likes            Int        @default(0)
+  postLikes        PostLike[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+}
+
+model DiscussionLike {
   id           String     @id @default(cuid())
-  content      String
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   discussionId String
   discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
-  authorId     String
-  author       User       @relation(fields: [authorId], references: [id])
-  parentId     String?
-  parent       Reply?     @relation("NestedReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  nested       Reply[]    @relation("NestedReplies")
-  likes        Int        @default(0)
   createdAt    DateTime   @default(now())
+
+  @@unique([userId, discussionId])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
 }

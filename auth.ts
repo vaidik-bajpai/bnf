@@ -60,9 +60,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async session({ session, token }) {
             if (session.user && token) {
                 session.user.id = token.id as string;
-                (session.user as any).username = token.username || (session.user.email?.split("@")[0] ?? "member");
-                (session.user as any).initials = token.initials || "U";
-                (session.user as any).bg = token.bg || "#B85428";
+                const customUser = session.user as typeof session.user & {
+                    username?: string;
+                    initials?: string;
+                    bg?: string;
+                };
+                customUser.username = (token.username as string) || (session.user.email?.split("@")[0] ?? "member");
+                customUser.initials = (token.initials as string) || "U";
+                customUser.bg = (token.bg as string) || "#B85428";
             }
             return session;
         },
