@@ -13,17 +13,15 @@ import {
     TrendingUp,
     Sparkles,
     BookOpen,
+    Loader2,
 } from "lucide-react";
 import { AshokaCakra, TricolorStripe } from "../Symbols";
-import {
-    getMegaThreadById,
-    getDiscussionsByMegaThread,
-    forumCategories,
-    getMegaThreads,
-} from "@/data/forumData";
-import { getMegaThreadByIdAction } from "@/app/actions/forum";
+import { forumCategories } from "@/data/forumData";
+import { getMegaThreadByIdAction, getMegaThreadsAction, toggleBookmark } from "@/app/actions/forum";
+import { useAuth } from "@/context/AuthContext";
 import type { MegaThread, Discussion } from "@/types/forum";
 import DiscussionCard from "./DiscussionCard";
+import ShareModal from "../modals/ShareModal";
 
 interface MegaThreadPageProps {
     megaThreadId: string;
@@ -40,30 +38,47 @@ export default function MegaThreadPage({
     onNewDiscussion,
     onViewMegaThread,
 }: MegaThreadPageProps) {
-    const [megaThread, setMegaThread] = useState<MegaThread | null>(() => getMegaThreadById(megaThreadId) || null);
-    const [allDiscussions, setAllDiscussions] = useState<Discussion[]>(() => getDiscussionsByMegaThread(megaThreadId));
-    const allMegaThreads = getMegaThreads().filter((m) => m.id !== megaThreadId);
+    const { user, requireAuth } = useAuth();
+    const [megaThread, setMegaThread] = useState<MegaThread | null>(null);
+    const [allDiscussions, setAllDiscussions] = useState<Discussion[]>([]);
+    const [allMegaThreads, setAllMegaThreads] = useState<MegaThread[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [sharingDiscussion, setSharingDiscussion] = useState<Discussion | null>(null);
 
     const [activeTab, setActiveTab] = useState<"featured" | "recent" | "popular">("featured");
     const [searchQuery, setSearchQuery] = useState("");
     const [isFollowing, setIsFollowing] = useState(false);
-    const [followerCount, setFollowerCount] = useState(() => megaThread?.participantCount || 120);
+    const [followerCount, setFollowerCount] = useState(0);
 
     useEffect(() => {
         let active = true;
-        getMegaThreadByIdAction(megaThreadId).then((data) => {
-            if (!active || !data) return;
-            setMegaThread(data as unknown as MegaThread);
-            if (data.participantCount) {
-                setFollowerCount(data.participantCount);
-            }
-            const threadData = data as unknown as { discussions?: Discussion[] };
-            if (threadData.discussions) {
-                setAllDiscussions(threadData.discussions);
-            }
-        }).catch((err) => {
-            console.error("Backend fetch error in MegaThreadPage:", err);
+        Promise.resolve().then(() => {
+            if (active) setIsLoading(true);
         });
+
+        Promise.all([
+            getMegaThreadByIdAction(megaThreadId),
+            getMegaThreadsAction(),
+        ])
+            .then(([data, siblings]) => {
+                if (!active) return;
+                if (data) {
+                    setMegaThread(data as unknown as MegaThread);
+                    setFollowerCount(data.participantCount || 0);
+                    const threadData = data as unknown as { discussions?: Discussion[] };
+                    if (threadData.discussions) {
+                        setAllDiscussions(threadData.discussions);
+                    }
+                }
+                if (siblings) {
+                    setAllMegaThreads((siblings as unknown as MegaThread[]).filter((m) => m.id !== megaThreadId));
+                }
+                setIsLoading(false);
+            })
+            .catch((err) => {
+                console.error("Backend fetch error in MegaThreadPage:", err);
+                if (active) setIsLoading(false);
+            });
 
         return () => {
             active = false;
@@ -72,7 +87,7 @@ export default function MegaThreadPage({
 
     const categoryObj = forumCategories.find((c) => c.id === megaThread?.category);
     const categoryColor = categoryObj?.color || "#B85428";
-    const categoryName = categoryObj?.name || megaThread?.categoryLabel || "General";
+    const categoryName = megaThread?.categoryLabel || categoryObj?.name || "General";
 
     const handleToggleFollow = () => {
         setIsFollowing((prev) => {
@@ -80,6 +95,26 @@ export default function MegaThreadPage({
             setFollowerCount((count) => (next ? count + 1 : count - 1));
             return next;
         });
+    };
+
+    const handleToggleBookmark = async (discussionId: string) => {
+        if (!user) {
+            requireAuth(() => handleToggleBookmark(discussionId));
+            return;
+        }
+
+        setAllDiscussions((prev) =>
+            prev.map((d) => (d.id === discussionId ? { ...d, isBookmarked: !d.isBookmarked } : d))
+        );
+
+        try {
+            const res = await toggleBookmark(discussionId, user.id);
+            setAllDiscussions((prev) =>
+                prev.map((d) => (d.id === discussionId ? { ...d, isBookmarked: res.bookmarked } : d))
+            );
+        } catch (err) {
+            console.error("Failed to toggle bookmark:", err);
+        }
     };
 
     const filteredDiscussions = useMemo(() => {
@@ -105,6 +140,14 @@ export default function MegaThreadPage({
 
         return list;
     }, [allDiscussions, searchQuery, activeTab]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#FAFAF7] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-[#B85428] animate-spin" />
+            </div>
+        );
+    }
 
     if (!megaThread) {
         return (
@@ -284,6 +327,8 @@ export default function MegaThreadPage({
                                         key={d.id}
                                         discussion={d}
                                         onClick={() => onViewDiscussion(d.id)}
+                                        onToggleBookmark={handleToggleBookmark}
+                                        onShare={(item) => setSharingDiscussion(item)}
                                     />
                                 ))
                             )}
@@ -366,6 +411,14 @@ export default function MegaThreadPage({
                     </div>
                 </div>
             </div>
+
+            {/* Share Modal */}
+            <ShareModal
+                isOpen={Boolean(sharingDiscussion)}
+                onClose={() => setSharingDiscussion(null)}
+                title={sharingDiscussion?.title || ""}
+                discussionId={sharingDiscussion?.id}
+            />
         </div>
     );
 }

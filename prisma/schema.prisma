@@ -22,6 +22,8 @@ model User {
   posts           Post[]
   discussionLikes DiscussionLike[]
   postLikes       PostLike[]
+  bookmarks       Bookmark[]
+  reports         Report[]
   createdAt       DateTime         @default(now())
 }
 
@@ -74,7 +76,7 @@ model MegaThread {
   title            String
   description      String
   categoryId       String
-  category         Category     @relation(fields: [categoryId], references: [id])
+  category         Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   featured         Boolean      @default(false)
   tags             String[]
   discussionCount  Int          @default(0)
@@ -82,6 +84,8 @@ model MegaThread {
   discussions      Discussion[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+
+  @@index([categoryId])
 }
 
 model Discussion {
@@ -92,18 +96,31 @@ model Discussion {
   megaThreadId    String?
   megaThread      MegaThread?      @relation(fields: [megaThreadId], references: [id], onDelete: SetNull)
   categoryId      String
-  category        Category         @relation(fields: [categoryId], references: [id])
+  category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   authorId        String
-  author          User             @relation(fields: [authorId], references: [id])
+  author          User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
   pinned          Boolean          @default(false)
   views           Int              @default(0)
   likes           Int              @default(0)
+  shares          Int              @default(0)
   tags            String[]
+  imageUrl        String?
+  imageAlt        String?
+  photographer    String?
+  photographerUrl String?
+  pexelsUrl       String?
   posts           Post[]
   discussionLikes DiscussionLike[]
+  bookmarks       Bookmark[]
+  reports         Report[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   lastActivity    DateTime         @default(now())
+
+  @@index([categoryId])
+  @@index([megaThreadId])
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 model Post {
@@ -112,14 +129,20 @@ model Post {
   discussionId     String
   discussion       Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   authorId         String
-  author           User       @relation(fields: [authorId], references: [id])
+  author           User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   replyToPostId    String?
   replyToPost      Post?      @relation("PostReferences", fields: [replyToPostId], references: [id], onDelete: SetNull)
   referencingPosts Post[]     @relation("PostReferences")
   likes            Int        @default(0)
   postLikes        PostLike[]
+  reports          Report[]
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+
+  @@index([discussionId])
+  @@index([authorId])
+  @@index([replyToPostId])
+  @@index([createdAt])
 }
 
 model DiscussionLike {
@@ -131,6 +154,8 @@ model DiscussionLike {
   createdAt    DateTime   @default(now())
 
   @@unique([userId, discussionId])
+  @@index([discussionId])
+  @@index([userId])
 }
 
 model PostLike {
@@ -142,4 +167,41 @@ model PostLike {
   createdAt DateTime @default(now())
 
   @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Bookmark {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, discussionId])
+  @@index([discussionId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Report {
+  id           String      @id @default(cuid())
+  reason       String
+  details      String?     @db.Text
+  status       String      @default("PENDING")
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussionId String?
+  discussion   Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  postId       String?
+  post         Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([discussionId])
+  @@index([postId])
+  @@index([status])
+  @@index([createdAt])
 }

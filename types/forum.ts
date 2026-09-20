@@ -52,6 +52,8 @@ export interface MegaThread {
 export interface Discussion {
     id: string;
     megaThreadId?: string;
+    megaThreadTitle?: string;
+    megaThread?: { id: string; title: string; category?: string };
     title: string;
     excerpt: string;
     description?: string;
@@ -70,9 +72,17 @@ export interface Discussion {
     updatedAt?: string;
     pinned?: boolean;
     tags: string[];
+    imageUrl?: string | null;
+    imageAlt?: string | null;
+    photographer?: string | null;
+    photographerUrl?: string | null;
+    pexelsUrl?: string | null;
     likes?: number;
     isLiked?: boolean;
     likedBy?: Author[];
+    shares?: number;
+    isBookmarked?: boolean;
+    bookmarkCount?: number;
 }
 
 export interface Post {
@@ -87,6 +97,37 @@ export interface Post {
     likes?: number;
     isLiked?: boolean;
     likedBy?: Author[];
+    isReported?: boolean;
+}
+
+export type ReportReason =
+    | "spam"
+    | "harassment"
+    | "hate_speech"
+    | "misinformation"
+    | "inappropriate"
+    | "copyright"
+    | "off_topic"
+    | "other";
+
+export interface Report {
+    id: string;
+    reason: string;
+    details?: string | null;
+    status: "PENDING" | "REVIEWED" | "RESOLVED" | "DISMISSED";
+    userId: string;
+    discussionId?: string | null;
+    postId?: string | null;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface Bookmark {
+    id: string;
+    userId: string;
+    discussionId: string;
+    createdAt: string;
+    discussion?: Discussion;
 }
 
 export interface ReplyReference {

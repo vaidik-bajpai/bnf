@@ -1,11 +1,28 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { X, Loader2, Layers } from "lucide-react";
+import { X, Loader2, Layers, Sparkles } from "lucide-react";
 import { TricolorStripe } from "../Symbols";
 import { forumCategories, getMegaThreads, addMockDiscussion } from "@/data/forumData";
-import { createDiscussion } from "@/app/actions/forum";
+import { createDiscussion, getMegaThreadsAction, getCategoriesAction } from "@/app/actions/forum";
 import { useAuth } from "@/context/AuthContext";
+import type { MegaThread } from "@/types/forum";
+
+const SAMPLE_N8N_PAYLOAD = JSON.stringify(
+    [
+        {
+            title: "समुदाय के लिए महत्वपूर्ण जानकारी",
+            body: "हाल ही में प्राप्त जानकारी के अनुसार, इस विषय पर अभी और विवरण सामने आना बाकी है। स्थानीय नागरिकों से अनुरोध है कि वे आगामी अपडेट पर नजर बनाए रखें और समुदाय हित में सक्रिय रहें।\n\n---\n\n### मुख्य तथ्य\n\n- दिए गए लेख में कोई विशिष्ट तथ्य या घटना उपलब्ध नहीं है।\n\n### चर्चा के बिंदु\n\n1. इस विषय पर आपकी क्या राय है?\n2. समुदाय के विकास के लिए हमें आगे क्या कदम उठाने चाहिए?\n",
+            image_url: "https://images.pexels.com/photos/1325754/pexels-photo-1325754.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+            image_alt: "Smiling team members engaging in a positive office discussion.",
+            photographer: "Jopwell",
+            photographer_url: "https://www.pexels.com/@jopwell",
+            pexels_url: "https://www.pexels.com/photo/man-sitting-on-office-chair-1325754/",
+        },
+    ],
+    null,
+    2
+);
 
 interface NewDiscussionModalProps {
     isOpen: boolean;
@@ -21,7 +38,8 @@ export default function NewDiscussionModal({
     defaultMegaThreadId,
 }: NewDiscussionModalProps) {
     const { user } = useAuth();
-    const megaThreads = getMegaThreads();
+    const [megaThreads, setMegaThreads] = useState<MegaThread[]>(() => getMegaThreads());
+    const [categories, setCategories] = useState<{ id: string; name: string; count?: number; color?: string }[]>(forumCategories);
 
     const initialMt = defaultMegaThreadId || (megaThreads[0]?.id ?? "");
     const [megaThreadId, setMegaThreadId] = useState(initialMt);
@@ -33,8 +51,81 @@ export default function NewDiscussionModal({
     const [body, setBody] = useState("");
     const [tagsInput, setTagsInput] = useState("");
 
+    // n8n Pipeline Integration state
+    const [showPipelineImport, setShowPipelineImport] = useState(false);
+    const [pipelineRawJson, setPipelineRawJson] = useState("");
+    const [pipelineMetadata, setPipelineMetadata] = useState<{
+        image_url?: string;
+        image_alt?: string;
+        photographer?: string;
+        photographer_url?: string;
+        pexels_url?: string;
+    } | null>(null);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    const handleApplyPipelineJson = (raw: string) => {
+        try {
+            setErrorMsg(null);
+            const parsed = JSON.parse(raw);
+            const item = Array.isArray(parsed) ? parsed[0] : parsed;
+            if (!item || !item.title || !item.body) {
+                setErrorMsg("Invalid payload: item must have 'title' and 'body'.");
+                return;
+            }
+            setTitle(item.title);
+            setBody(item.body);
+            setPipelineMetadata({
+                image_url: item.image_url || item.imageUrl,
+                image_alt: item.image_alt || item.imageAlt,
+                photographer: item.photographer,
+                photographer_url: item.photographer_url || item.photographerUrl,
+                pexels_url: item.pexels_url || item.pexelsUrl,
+            });
+
+            // Auto-tag
+            const autoTags = ["समुदाय", "नागरिक", "विकास"];
+            setTagsInput(autoTags.join(", "));
+
+            // Category matching
+            const matchedCategory = categories.find((c) => c.id === "society" || c.id === "development") || categories[0];
+            if (matchedCategory) {
+                setCategory(matchedCategory.id);
+                const matchedMt = megaThreads.find((m) => m.category === matchedCategory.id) || megaThreads[0];
+                if (matchedMt) setMegaThreadId(matchedMt.id);
+            }
+            setShowPipelineImport(false);
+        } catch {
+            setErrorMsg("Could not parse JSON. Please verify valid JSON format.");
+        }
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+        let active = true;
+        Promise.all([
+            getMegaThreadsAction(),
+            getCategoriesAction(),
+        ]).then(([dbMts, dbCats]) => {
+            if (!active) return;
+            if (dbMts && dbMts.length > 0) {
+                setMegaThreads(dbMts as unknown as MegaThread[]);
+                if (!megaThreadId) {
+                    const firstId = defaultMegaThreadId || dbMts[0].id;
+                    setMegaThreadId(firstId);
+                    const matched = dbMts.find((m) => m.id === firstId);
+                    if (matched) setCategory(matched.category);
+                }
+            }
+            if (dbCats && dbCats.length > 0) {
+                setCategories(dbCats);
+            }
+        }).catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [isOpen, defaultMegaThreadId, megaThreadId]);
 
     // Sync defaultMegaThreadId if passed or changes
     useEffect(() => {
@@ -123,6 +214,11 @@ export default function NewDiscussionModal({
                     categoryId: category || selectedMegaThread?.category || "history",
                     tags: parsedTags,
                     authorId: user?.id,
+                    imageUrl: pipelineMetadata?.image_url,
+                    imageAlt: pipelineMetadata?.image_alt,
+                    photographer: pipelineMetadata?.photographer,
+                    photographerUrl: pipelineMetadata?.photographer_url,
+                    pexelsUrl: pipelineMetadata?.pexels_url,
                 });
                 if (dbDisc && "id" in dbDisc && dbDisc.id) {
                     finalDiscussionId = dbDisc.id;
@@ -134,6 +230,7 @@ export default function NewDiscussionModal({
             setTitle("");
             setBody("");
             setTagsInput("");
+            setPipelineMetadata(null);
 
             if (onCreated) onCreated(finalDiscussionId);
             onClose();
@@ -177,6 +274,59 @@ export default function NewDiscussionModal({
                             {errorMsg}
                         </div>
                     )}
+
+                    {/* Pipeline Import Toggle */}
+                    <div className="bg-[#FAF8F5] border border-[#EDE8DF] p-3 rounded-xs">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-[#B85428]" />
+                                <span className="text-xs font-semibold text-[#1C1917]">
+                                    n8n Pipeline Importer
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowPipelineImport(!showPipelineImport)}
+                                className="text-xs text-[#B85428] hover:underline font-medium cursor-pointer"
+                            >
+                                {showPipelineImport ? "Close Importer" : "Import from n8n Pipeline"}
+                            </button>
+                        </div>
+
+                        {showPipelineImport && (
+                            <div className="mt-3 pt-3 border-t border-[#EDE8DF] space-y-2.5">
+                                <p className="text-[11px] text-[#6B5B4E]">
+                                    Paste a JSON array or object output by your n8n workflow. The thread will be anchored and formatted with typography matching the platform without rendering images.
+                                </p>
+                                <textarea
+                                    value={pipelineRawJson}
+                                    onChange={(e) => setPipelineRawJson(e.target.value)}
+                                    placeholder='[ { "title": "...", "body": "...", "image_url": "..." } ]'
+                                    rows={4}
+                                    className="w-full font-mono text-xs p-2.5 bg-white border border-[#EDE8DF] text-[#1C1917] focus:outline-none focus:border-[#B85428]"
+                                />
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleApplyPipelineJson(pipelineRawJson)}
+                                        className="bg-[#B85428] text-white text-xs px-3 py-1.5 font-medium hover:bg-[#A04520] transition-colors cursor-pointer"
+                                    >
+                                        Apply Payload
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPipelineRawJson(SAMPLE_N8N_PAYLOAD);
+                                            handleApplyPipelineJson(SAMPLE_N8N_PAYLOAD);
+                                        }}
+                                        className="bg-white border border-[#B85428] text-[#B85428] text-xs px-3 py-1.5 font-medium hover:bg-[#FAF8F5] transition-colors cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <Sparkles className="w-3.5 h-3.5" /> Load Sample n8n Response
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {/* MegaThread Selection */}
                     <div>
@@ -227,7 +377,7 @@ export default function NewDiscussionModal({
                             className="w-full border border-[#EDE8DF] px-3.5 py-2.5 text-[#1C1917] focus:outline-none focus:border-[#B85428] text-sm bg-white"
                         >
                             <option value="">Select a category</option>
-                            {forumCategories.map((c) => (
+                            {categories.map((c) => (
                                 <option key={c.id} value={c.id}>
                                     {c.name}
                                 </option>

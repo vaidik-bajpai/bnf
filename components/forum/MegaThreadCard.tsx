@@ -17,7 +17,7 @@ export default function MegaThreadCard({
 }: MegaThreadCardProps) {
     const categoryObj = forumCategories.find((c) => c.id === megaThread.category);
     const categoryColor = categoryObj?.color || "#B85428";
-    const categoryName = categoryObj?.name || megaThread.categoryLabel || "General";
+    const categoryName = megaThread.categoryLabel || categoryObj?.name || "General";
 
     return (
         <div

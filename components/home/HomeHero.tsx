@@ -1,88 +1,145 @@
+'use client';
+
 import { ArrowRight, ChevronDown, MessageSquare } from "lucide-react";
-import { AshokaCakra, LotusSmall } from "../Symbols";
+import { LotusSmall } from "../Symbols";
+import HeroSpinningWheel from "./HeroSpinningWheel";
 
 interface HomeHeroProps {
     onViewForum: () => void;
 }
 
 const facts = [
-    { num: "5,000+", label: "Years of Continuous Civilization", note: "From the Indus Valley to the Space Age — an unbroken story" },
-    { num: "22", label: "Scheduled Languages", note: "India is home to one of the world's greatest diversities of living languages" },
-    { num: "40+", label: "UNESCO World Heritage Sites", note: "From Ajanta to Hampi — India's monuments span every era of civilization" },
+    {
+        num: "5,000+",
+        label: "Years of Continuous Civilization",
+        note: "From the Saraswati-Sindhu era to the Space Age — an unbroken, living civilizational story.",
+    },
+    {
+        num: "22",
+        label: "Scheduled Languages",
+        note: "Home to the world's most sophisticated linguistic traditions, Paninian grammar, and living poetry.",
+    },
+    {
+        num: "40+",
+        label: "UNESCO World Heritage Sites",
+        note: "From Ajanta and Ellora to Hampi and Thanjavur — monumental architectural and spiritual genius.",
+    },
 ];
 
 export default function HomeHero({ onViewForum }: HomeHeroProps) {
     return (
-        <section id="home" className="relative min-h-screen flex items-center overflow-hidden">
+        <section id="home" className="relative min-h-screen flex flex-col justify-center items-center overflow-hidden pt-28 pb-20 px-6">
+            {/* Background Image Layer */}
             <div
                 className="absolute inset-0 bg-cover bg-center bg-[#0F1C3F]"
-                style={{ backgroundImage: "url('https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1920&h=1080&fit=crop&auto=format')" }}
+                style={{
+                    backgroundImage:
+                        "url('https://images.unsplash.com/photo-1587474260584-136574528ed5?w=1920&h=1080&fit=crop&auto=format')",
+                }}
             />
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0A1428]/97 via-[#0F1C3F]/90 to-[#2A1008]/70" />
 
+            {/* Rich Civilizational Gradient Overlay tuned for India Gate architectural visibility */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0A1428]/90 via-[#0F1C3F]/78 to-[#1E0C06]/80" />
+
+            {/* Radial Glow Centered Behind Name */}
+            <div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full pointer-events-none opacity-20 blur-3xl"
+                style={{
+                    background: "radial-gradient(circle, #C8971A 0%, #B85428 50%, transparent 75%)",
+                }}
+            />
+
+            {/* Solid Spinning Ashoka Chakra with GSAP Animation */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-                <AshokaCakra className="w-[80vw] h-[80vw] max-w-4xl text-white opacity-[0.025]" />
+                <HeroSpinningWheel className="w-[85vw] h-[85vw] max-w-3xl" />
             </div>
-            <div className="absolute bottom-20 right-12 opacity-10 pointer-events-none">
+            <div className="absolute bottom-16 right-8 sm:right-16 opacity-10 pointer-events-none">
+                <LotusSmall className="w-48 h-36 text-[#C8971A]" />
+            </div>
+            <div className="absolute top-28 left-8 sm:left-16 opacity-10 pointer-events-none -scale-x-100">
                 <LotusSmall className="w-48 h-36 text-[#C8971A]" />
             </div>
 
-            <div className="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-20 grid lg:grid-cols-2 gap-12 items-center">
-                <div>
-                    <div className="flex items-center gap-3 mb-8">
-                        <AshokaCakra className="w-6 h-6 text-[#C8971A]" />
-                        <span className="text-[#C8971A] text-xs font-semibold tracking-[0.35em] uppercase">
-                            India &mdash; A Civilizational Journey
-                        </span>
-                    </div>
-                    <h1
-                        className="text-white font-bold leading-[1.08] mb-7"
-                        style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(2.6rem, 6vw, 5rem)" }}
+            {/* Centered Main Content Container */}
+            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center mt-16">
+
+                {/* Main Centered Website Name */}
+                <h1
+                    className="text-white font-bold leading-[1.06] text-center tracking-tight mb-4 drop-shadow-[0_4px_32px_rgba(0,0,0,0.9)]"
+                    style={{
+                        fontFamily: "'Fraunces', serif",
+                        fontSize: "clamp(3.2rem, 8vw, 6.5rem)",
+                    }}
+                >
+                    BHARAT-GANRAJYA
+                    <br />
+                    <span className="text-[#C8971A] drop-shadow-[0_2px_20px_rgba(200,151,26,0.6)]">
+                        Nationalists Front
+                    </span>
+                </h1>
+
+                {/* Sub-heading / Sanskrit Motto */}
+                {/* <div className="text-white/65 text-xs sm:text-sm tracking-[0.25em] uppercase font-semibold mb-6 flex items-center gap-2 justify-center">
+                    <span>भारतीय सभ्यता संगम</span>
+                    <span className="text-[#C8971A]">&bull;</span>
+                    <span>सत्यमेव जयते</span>
+                </div> */}
+
+                {/* Narrative Description */}
+                {/* <p
+                    className="text-white/75 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto mb-10"
+                    style={{ fontFamily: "'Spectral', Georgia, serif" }}
+                >
+                    Exploring the depths of India&apos;s intellectual, artistic, and philosophical heritage — an open, rigorous forum for scholars, citizens, and thinkers across five millennia of continuous thought, statecraft, and national renewal.
+                </p> */}
+
+                {/* Centered Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 w-full max-w-md mx-auto mt-16">
+                    <button
+                        onClick={() => document.getElementById("heritage")?.scrollIntoView({ behavior: "smooth" })}
+                        className="w-full sm:w-auto flex items-center justify-center gap-3 bg-[#B85428] hover:bg-[#A04820] text-white px-9 py-4 text-sm font-semibold tracking-wide transition-all group cursor-pointer shadow-lg shadow-[#B85428]/25 hover:shadow-xl hover:shadow-[#B85428]/35"
                     >
-                        Five Millennia of
-                        <br />
-                        <span className="text-[#C8971A]">Thought, Art</span>
-                        <br />
-                        &amp; Discovery
-                    </h1>
-                    <p
-                        className="text-white/60 text-lg leading-relaxed mb-10 max-w-xl"
-                        style={{ fontFamily: "'Spectral', Georgia, serif" }}
+                        Explore Heritage
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
+                    </button>
+                    <button
+                        onClick={onViewForum}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2.5 border border-white/25 hover:border-[#C8971A] bg-white/5 hover:bg-[#C8971A]/10 text-white/85 hover:text-[#C8971A] px-9 py-4 text-sm font-semibold tracking-wide transition-all cursor-pointer backdrop-blur-xs"
                     >
-                        Exploring the depths of India&apos;s intellectual, artistic, and philosophical heritage — and the thinkers, builders, and dreamers who shaped a civilization that never stopped.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                        <button
-                            onClick={() => document.getElementById("heritage")?.scrollIntoView({ behavior: "smooth" })}
-                            className="flex items-center justify-center gap-3 bg-[#B85428] hover:bg-[#A04820] text-white px-9 py-4 text-sm font-semibold tracking-wide transition-all group cursor-pointer"
-                        >
-                            Explore Heritage
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                        <button
-                            onClick={onViewForum}
-                            className="flex items-center justify-center gap-2 border border-white/20 hover:border-[#C8971A] text-white/70 hover:text-[#C8971A] px-9 py-4 text-sm font-semibold tracking-wide transition-all cursor-pointer"
-                        >
-                            <MessageSquare className="w-4 h-4" /> Join the Forum
-                        </button>
-                    </div>
+                        <MessageSquare className="w-4 h-4 text-[#C8971A]" />
+                        Enter the Forum
+                    </button>
                 </div>
 
-                <div className="hidden lg:grid grid-cols-1 gap-4">
+                {/* Symmetrical 3-Card Fact Grid Across the Center */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-5xl mx-auto w-full pt-8 border-t border-white/10">
                     {facts.map((f) => (
-                        <div key={f.label} className="bg-white/6 border border-white/10 px-6 py-5 hover:border-[#C8971A]/40 transition-colors">
-                            <div className="text-[#C8971A] text-3xl font-bold mb-1" style={{ fontFamily: "'Fraunces', serif" }}>
+                        <div
+                            key={f.label}
+                            className="bg-white/5 border border-white/10 p-6 backdrop-blur-xs hover:border-[#C8971A]/50 hover:bg-white/8 transition-all group text-center"
+                        >
+                            <div
+                                className="text-[#C8971A] text-3xl sm:text-4xl font-bold mb-1.5 transition-transform group-hover:scale-105"
+                                style={{ fontFamily: "'Fraunces', serif" }}
+                            >
                                 {f.num}
                             </div>
-                            <div className="text-white font-semibold text-sm mb-1">{f.label}</div>
-                            <div className="text-white/40 text-xs leading-relaxed">{f.note}</div>
+                            <div className="text-white font-semibold text-sm mb-1.5 tracking-wide">{f.label}</div>
+                            <div className="text-white/45 text-xs leading-relaxed max-w-xs mx-auto">{f.note}</div>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce opacity-25">
-                <ChevronDown className="w-5 h-5 text-white" />
+            {/* Bottom Bouncing Scroll Indicator */}
+            <div className="relative z-10 mt-12 animate-bounce opacity-30">
+                <button
+                    onClick={() => document.getElementById("heritage")?.scrollIntoView({ behavior: "smooth" })}
+                    className="text-white p-2 hover:text-[#C8971A] transition-colors cursor-pointer"
+                    aria-label="Scroll to content"
+                >
+                    <ChevronDown className="w-5 h-5" />
+                </button>
             </div>
         </section>
     );

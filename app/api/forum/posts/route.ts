@@ -21,7 +21,8 @@ export async function POST(request: Request) {
         return NextResponse.json(result, { status: 201 });
     } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to post reply";
-        return NextResponse.json({ error: msg }, { status: 500 });
+        const status = msg.includes("not found") ? 404 : 500;
+        return NextResponse.json({ error: msg }, { status });
     }
 }
 
@@ -36,7 +37,8 @@ export async function PATCH(request: Request) {
         return NextResponse.json(result);
     } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to update reply";
-        return NextResponse.json({ error: msg }, { status: 500 });
+        const status = msg.includes("Unauthorized") ? 403 : msg.includes("not found") ? 404 : 500;
+        return NextResponse.json({ error: msg }, { status });
     }
 }
 
@@ -52,6 +54,7 @@ export async function DELETE(request: Request) {
         return NextResponse.json(result);
     } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to delete reply";
-        return NextResponse.json({ error: msg }, { status: 500 });
+        const status = msg.includes("Unauthorized") ? 403 : msg.includes("not found") ? 404 : 500;
+        return NextResponse.json({ error: msg }, { status });
     }
 }

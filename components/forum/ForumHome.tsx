@@ -9,13 +9,29 @@ import {
     TrendingUp,
     Clock,
     BookOpen,
+    Compass,
+    Feather,
+    Atom,
+    Landmark,
+    Users2,
+    ShieldCheck,
+    Loader2,
+    Bookmark,
 } from "lucide-react";
 import { AshokaCakra, TricolorStripe } from "../Symbols";
-import { forumCategories, getMegaThreads, getAllDiscussions } from "@/data/forumData";
-import { getMegaThreadsAction, getDiscussions } from "@/app/actions/forum";
+import { forumCategories } from "@/data/forumData";
+import {
+    getMegaThreadsAction,
+    getDiscussions,
+    getCategoriesAction,
+    getForumStatsAction,
+    toggleBookmark,
+} from "@/app/actions/forum";
+import { useAuth } from "@/context/AuthContext";
 import type { MegaThread, Discussion } from "@/types/forum";
 import MegaThreadCard from "./MegaThreadCard";
 import DiscussionCard from "./DiscussionCard";
+import ShareModal from "../modals/ShareModal";
 
 interface ForumHomeProps {
     onViewThread: (id: string) => void;
@@ -23,44 +39,104 @@ interface ForumHomeProps {
     onNewDiscussion: () => void;
 }
 
+const categoryIconMap: Record<string, React.ReactNode> = {
+    history: <Compass className="w-4 h-4" />,
+    philosophy: <BookOpen className="w-4 h-4" />,
+    culture: <Landmark className="w-4 h-4" />,
+    literature: <Feather className="w-4 h-4" />,
+    science: <Atom className="w-4 h-4" />,
+    art: <Landmark className="w-4 h-4" />,
+    society: <Users2 className="w-4 h-4" />,
+    development: <ShieldCheck className="w-4 h-4" />,
+};
+
 export default function ForumHome({
     onViewThread,
     onViewMegaThread,
     onNewDiscussion,
 }: ForumHomeProps) {
+    const { user, requireAuth } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [megaThreadFilter, setMegaThreadFilter] = useState<"featured" | "active" | "popular">("featured");
-    const [discussionFilter, setDiscussionFilter] = useState<"latest" | "trending" | "pinned">("latest");
+    const [discussionFilter, setDiscussionFilter] = useState<"latest" | "trending" | "pinned" | "bookmarked">("latest");
+    const [sharingDiscussion, setSharingDiscussion] = useState<Discussion | null>(null);
 
-    const [allMegaThreads, setAllMegaThreads] = useState<MegaThread[]>(() => getMegaThreads());
-    const [allDiscussions, setAllDiscussions] = useState<Discussion[]>(() => getAllDiscussions());
+    const [allMegaThreads, setAllMegaThreads] = useState<MegaThread[]>([]);
+    const [allDiscussions, setAllDiscussions] = useState<Discussion[]>([]);
+    const [categories, setCategories] = useState<{ id: string; name: string; count: number; color: string }[]>([]);
+    const [stats, setStats] = useState({ megaThreadCount: 0, discussionCount: 0, categoryCount: 0, scholarCount: 0, postCount: 0 });
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let active = true;
+        Promise.resolve().then(() => {
+            if (active) setIsLoading(true);
+        });
+
         Promise.all([
             getMegaThreadsAction(),
             getDiscussions({
                 categoryId: activeCategory,
                 search: searchQuery.trim() || undefined,
                 sortBy: discussionFilter,
+                clientUserId: user?.id,
             }),
-        ]).then(([dbMts, dbDiscs]) => {
+            getCategoriesAction(),
+            getForumStatsAction(),
+        ]).then(([dbMts, dbDiscs, dbCats, dbStats]) => {
             if (!active) return;
-            if (dbMts && dbMts.length > 0) {
-                setAllMegaThreads(dbMts as unknown as MegaThread[]);
+            setAllMegaThreads((dbMts || []) as unknown as MegaThread[]);
+            setAllDiscussions((dbDiscs || []) as unknown as Discussion[]);
+            if (dbCats && dbCats.length > 0) {
+                setCategories(dbCats);
             }
-            if (dbDiscs && dbDiscs.length > 0) {
-                setAllDiscussions(dbDiscs as unknown as Discussion[]);
+            if (dbStats) {
+                setStats(dbStats);
             }
+            setIsLoading(false);
         }).catch((err) => {
             console.error("Backend fetch error in ForumHome:", err);
+            if (active) setIsLoading(false);
         });
 
         return () => {
             active = false;
         };
-    }, [activeCategory, searchQuery, discussionFilter]);
+    }, [activeCategory, searchQuery, discussionFilter, user?.id]);
+
+    // Handle toggle bookmark from card
+    const handleToggleBookmark = async (discussionId: string) => {
+        if (!user) {
+            requireAuth(() => handleToggleBookmark(discussionId));
+            return;
+        }
+
+        setAllDiscussions((prev) =>
+            prev.map((d) => {
+                if (d.id !== discussionId) return d;
+                const nextB = !d.isBookmarked;
+                return {
+                    ...d,
+                    isBookmarked: nextB,
+                    bookmarkCount: Math.max(0, (d.bookmarkCount || 0) + (nextB ? 1 : -1)),
+                };
+            })
+        );
+
+        try {
+            const res = await toggleBookmark(discussionId, user.id);
+            setAllDiscussions((prev) =>
+                prev.map((d) =>
+                    d.id === discussionId
+                        ? { ...d, isBookmarked: res.bookmarked, bookmarkCount: res.bookmarkCount }
+                        : d
+                )
+            );
+        } catch (err) {
+            console.error("Failed to toggle bookmark:", err);
+        }
+    };
 
     // Filtered MegaThreads
     const filteredMegaThreads = useMemo(() => {
@@ -113,6 +189,8 @@ export default function ForumHome({
             list = list.filter((d) => d.pinned);
         } else if (discussionFilter === "trending") {
             list.sort((a, b) => (b.views || 0) - (a.views || 0));
+        } else if (discussionFilter === "bookmarked") {
+            list = list.filter((d) => d.isBookmarked);
         } else {
             // Latest
             list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
@@ -186,23 +264,28 @@ export default function ForumHome({
                     >
                         All Categories
                     </button>
-                    {forumCategories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
-                            className={`p-2.5 text-center text-xs font-semibold border transition-all cursor-pointer ${activeCategory === cat.id
-                                    ? "text-white border-transparent"
-                                    : "bg-white text-[#6B5B4E] border-[#EDE8DF] hover:border-[#B85428]"
+                    {(categories.length > 0 ? categories : forumCategories).map((cat) => {
+                        const icon = categoryIconMap[cat.id] || <BookOpen className="w-4 h-4" />;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
+                                className={`p-2.5 text-center text-xs font-semibold border transition-all cursor-pointer ${
+                                    activeCategory === cat.id
+                                        ? "text-white border-transparent"
+                                        : "bg-white text-[#6B5B4E] border-[#EDE8DF] hover:border-[#B85428]"
                                 }`}
-                            style={activeCategory === cat.id ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
-                            title={cat.name}
-                        >
-                            <div className="flex flex-col items-center gap-1">
-                                <span style={activeCategory === cat.id ? {} : { color: cat.color }}>{cat.icon}</span>
-                                <span className="leading-tight truncate w-full">{cat.name.split(" ")[0]}</span>
-                            </div>
-                        </button>
-                    ))}
+                                style={activeCategory === cat.id ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+                                title={`${cat.name} (${cat.count ?? 0} discussions)`}
+                            >
+                                <div className="flex flex-col items-center gap-1">
+                                    <span style={activeCategory === cat.id ? {} : { color: cat.color }}>{icon}</span>
+                                    <span className="leading-tight truncate w-full">{cat.name.split(" ")[0]}</span>
+                                    <span className="text-[10px] opacity-75 font-mono">({cat.count ?? 0})</span>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* ============================================================ */}
@@ -306,6 +389,24 @@ export default function ForumHome({
                                         )}
                                     </button>
                                 ))}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!user) {
+                                            requireAuth(() => setDiscussionFilter("bookmarked"));
+                                        } else {
+                                            setDiscussionFilter("bookmarked");
+                                        }
+                                    }}
+                                    className={`px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                                        discussionFilter === "bookmarked"
+                                            ? "text-[#B85428] border-b-2 border-[#B85428]"
+                                            : "text-[#9E8F85] hover:text-[#1C1917]"
+                                    }`}
+                                >
+                                    <Bookmark className={`w-3.5 h-3.5 inline mr-1 ${discussionFilter === "bookmarked" ? "fill-[#B85428]" : ""}`} />
+                                    Bookmarked
+                                </button>
                             </div>
                             <span className="text-xs text-[#9E8F85]">
                                 {filteredDiscussions.length} discussion{filteredDiscussions.length !== 1 ? "s" : ""}
@@ -314,10 +415,19 @@ export default function ForumHome({
 
                         {/* Discussions List */}
                         <div className="space-y-3">
-                            {filteredDiscussions.length === 0 ? (
+                            {isLoading && allDiscussions.length === 0 ? (
+                                <div className="bg-white border border-[#EDE8DF] p-12 text-center text-[#9E8F85]">
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#B85428]" />
+                                    <p className="text-xs text-[#6B5B4E]">Loading discussions from database...</p>
+                                </div>
+                            ) : filteredDiscussions.length === 0 ? (
                                 <div className="bg-white border border-[#EDE8DF] p-10 text-center text-[#9E8F85]">
                                     <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                                    <p className="text-sm text-[#4A403A]">No discussions match your filter.</p>
+                                    <p className="text-sm text-[#4A403A]">
+                                        {discussionFilter === "bookmarked"
+                                            ? "You haven't bookmarked any discussions yet."
+                                            : "No discussions match your filter."}
+                                    </p>
                                 </div>
                             ) : (
                                 filteredDiscussions.map((d) => (
@@ -326,6 +436,8 @@ export default function ForumHome({
                                         discussion={d}
                                         megaThreadTitle={d.megaThreadId ? megaThreadMap.get(d.megaThreadId) : undefined}
                                         onClick={() => onViewThread(d.id)}
+                                        onToggleBookmark={handleToggleBookmark}
+                                        onShare={(item) => setSharingDiscussion(item)}
                                     />
                                 ))
                             )}
@@ -345,7 +457,7 @@ export default function ForumHome({
                                         className="text-2xl font-bold text-[#B85428]"
                                         style={{ fontFamily: "'Fraunces', serif" }}
                                     >
-                                        {allMegaThreads.length}
+                                        {stats.megaThreadCount || allMegaThreads.length}
                                     </div>
                                     <div className="text-xs text-[#9E8F85] mt-0.5">MegaThreads</div>
                                 </div>
@@ -354,7 +466,7 @@ export default function ForumHome({
                                         className="text-2xl font-bold text-[#0F1C3F]"
                                         style={{ fontFamily: "'Fraunces', serif" }}
                                     >
-                                        {allDiscussions.length}
+                                        {stats.discussionCount || allDiscussions.length}
                                     </div>
                                     <div className="text-xs text-[#9E8F85] mt-0.5">Discussions</div>
                                 </div>
@@ -363,7 +475,7 @@ export default function ForumHome({
                                         className="text-2xl font-bold text-[#2D6A4F]"
                                         style={{ fontFamily: "'Fraunces', serif" }}
                                     >
-                                        {forumCategories.length}
+                                        {stats.categoryCount || categories.length || forumCategories.length}
                                     </div>
                                     <div className="text-xs text-[#9E8F85] mt-0.5">Categories</div>
                                 </div>
@@ -372,7 +484,7 @@ export default function ForumHome({
                                         className="text-2xl font-bold text-[#C8971A]"
                                         style={{ fontFamily: "'Fraunces', serif" }}
                                     >
-                                        1,800+
+                                        {stats.scholarCount > 0 ? stats.scholarCount : 0}
                                     </div>
                                     <div className="text-xs text-[#9E8F85] mt-0.5">Scholars</div>
                                 </div>
@@ -425,6 +537,14 @@ export default function ForumHome({
                     </div>
                 </div>
             </div>
+
+            {/* Share Modal */}
+            <ShareModal
+                isOpen={Boolean(sharingDiscussion)}
+                onClose={() => setSharingDiscussion(null)}
+                title={sharingDiscussion?.title || ""}
+                discussionId={sharingDiscussion?.id}
+            />
         </div>
     );
 }

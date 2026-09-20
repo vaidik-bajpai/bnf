@@ -7,6 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "db:unseed": "npx tsx prisma/unseed.ts",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:reset": "npx tsx prisma/unseed.ts && npx tsx prisma/seed.ts",
+    "test": "npx tsx --test tests/*.test.ts",
+    "pipeline:test": "npx tsx scripts/test-pipeline.ts",
     "postinstall": "prisma skills sync || exit 0"
   },
   "prisma": {
@@ -17,6 +22,7 @@
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^6.4.1",
     "@tailwindcss/vite": "^4.3.3",
+    "gsap": "^3.15.0",
     "lucide-react": "^1.45.0",
     "next": "16.3.5",
     "next-auth": "^5.0.0-beta.32",

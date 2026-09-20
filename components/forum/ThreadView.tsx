@@ -16,6 +16,7 @@ import {
     ThumbsUp,
     Edit3,
     Trash2,
+    Flag,
 } from "lucide-react";
 import { TricolorStripe } from "../Symbols";
 import type { Discussion, Post } from "@/types/forum";
@@ -26,17 +27,19 @@ import {
     deleteDiscussion,
     updatePost,
     deletePost,
+    toggleBookmark,
 } from "@/app/actions/forum";
 import { useAuth } from "@/context/AuthContext";
 import {
     getMegaThreadById,
     forumCategories,
-    getDiscussionById,
-    getPostsByDiscussionId,
 } from "@/data/forumData";
 import PostCard from "./PostCard";
 import ReplyComposer from "./ReplyComposer";
+import FormattedBody from "./FormattedBody";
 import EditDiscussionModal from "../modals/EditDiscussionModal";
+import ReportModal from "../modals/ReportModal";
+import ShareModal from "../modals/ShareModal";
 
 interface ThreadViewProps {
     threadId: string;
@@ -67,15 +70,21 @@ export default function ThreadView({
     onViewMegaThread,
 }: ThreadViewProps) {
     const { user, requireAuth } = useAuth();
-    const [discussion, setDiscussion] = useState<Discussion | null>(() => getDiscussionById(threadId) || null);
-    const [posts, setPosts] = useState<Post[]>(() => getPostsByDiscussionId(threadId));
-    const [loading, setLoading] = useState(() => !getDiscussionById(threadId));
+    const [discussion, setDiscussion] = useState<Discussion | null>(null);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
 
     // State for interactions
     const [likedSet, setLikedSet] = useState<Set<string>>(new Set());
     const [isDiscussionLiked, setIsDiscussionLiked] = useState(false);
-    const [bookmarked, setBookmarked] = useState(false);
-    const [copiedLink, setCopiedLink] = useState(false);
+    const [isDiscussionBookmarked, setIsDiscussionBookmarked] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [reportTarget, setReportTarget] = useState<{
+        discussionId?: string;
+        postId?: string;
+        itemTitle?: string;
+        itemAuthor?: string;
+    } | null>(null);
 
     // Replying state
     const [replyingToPost, setReplyingToPost] = useState<Post | null>(null);
@@ -98,6 +107,7 @@ export default function ThreadView({
                 if (data) {
                     setDiscussion(data as unknown as Discussion);
                     setIsDiscussionLiked(Boolean(data.isLiked));
+                    setIsDiscussionBookmarked(Boolean(data.isBookmarked));
                     const initialLiked = new Set<string>();
                     data.posts.forEach((p) => {
                         if (p.isLiked) initialLiked.add(p.id);
@@ -120,13 +130,26 @@ export default function ThreadView({
     // Parent MegaThread if associated
     const parentMegaThread = useMemo(() => {
         if (!discussion?.megaThreadId) return null;
+        if (discussion.megaThread) {
+            return {
+                id: discussion.megaThread.id,
+                title: discussion.megaThread.title,
+                category: discussion.megaThread.category || discussion.category,
+                categoryLabel: discussion.categoryLabel,
+                description: "",
+                createdAt: "",
+                updatedAt: "",
+                discussionCount: 0,
+                participantCount: 0,
+            };
+        }
         return getMegaThreadById(discussion.megaThreadId);
     }, [discussion]);
 
     // Category styling
     const categoryObj = forumCategories.find((c) => c.id === discussion?.category);
-    const categoryColor = categoryObj?.color || "#B85428";
-    const categoryName = categoryObj?.name || discussion?.categoryLabel || "General";
+    const categoryColor = discussion?.categoryColor || categoryObj?.color || "#B85428";
+    const categoryName = discussion?.categoryLabel || categoryObj?.name || "General";
 
     // Build efficient Map lookup for O(1) post resolution (replyToPostId -> referenced Post)
     const postLookup = useMemo(() => {
@@ -423,10 +446,56 @@ export default function ThreadView({
         user && (user.id === discussion?.authorId || user.id === discussion?.author?.id)
     );
 
-    const handleCopyThreadLink = () => {
-        navigator.clipboard.writeText(window.location.href);
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2000);
+    // Bookmark toggle handler backed by database
+    const handleToggleBookmark = async () => {
+        if (!discussion) return;
+        if (!user) {
+            requireAuth(() => handleToggleBookmark());
+            return;
+        }
+
+        const nextBookmarked = !isDiscussionBookmarked;
+        setIsDiscussionBookmarked(nextBookmarked);
+        setDiscussion((prev) =>
+            prev
+                ? {
+                      ...prev,
+                      isBookmarked: nextBookmarked,
+                      bookmarkCount: Math.max(0, (prev.bookmarkCount || 0) + (nextBookmarked ? 1 : -1)),
+                  }
+                : prev
+        );
+
+        try {
+            const res = await toggleBookmark(discussion.id, user.id);
+            setIsDiscussionBookmarked(res.bookmarked);
+            setDiscussion((prev) =>
+                prev
+                    ? {
+                          ...prev,
+                          isBookmarked: res.bookmarked,
+                          bookmarkCount: res.bookmarkCount,
+                      }
+                    : prev
+            );
+        } catch (err) {
+            console.error("Failed to toggle bookmark:", err);
+            setIsDiscussionBookmarked(!nextBookmarked);
+        }
+    };
+
+    // Report modal trigger
+    const handleOpenReport = (target: {
+        discussionId?: string;
+        postId?: string;
+        itemTitle?: string;
+        itemAuthor?: string;
+    }) => {
+        if (!user) {
+            requireAuth(() => setReportTarget(target));
+            return;
+        }
+        setReportTarget(target);
     };
 
     if (loading) {
@@ -552,6 +621,59 @@ export default function ThreadView({
                             <Clock className="w-3.5 h-3.5" />
                             {formatRelativeTime(discussion.createdAt)}
                         </span>
+
+                        {/* Quick action buttons in header */}
+                        <div className="flex items-center gap-2 sm:ml-auto">
+                            <button
+                                type="button"
+                                onClick={() => handleStartReply(opPost || ({ id: `post-${discussion.id}-op` } as Post))}
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xs transition-colors cursor-pointer"
+                                title="Contribute a reply to this discussion"
+                            >
+                                <MessageSquare className="w-3.5 h-3.5 text-[#C8971A]" />
+                                <span>Reply</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleToggleBookmark}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer ${
+                                    isDiscussionBookmarked
+                                        ? "bg-[#C8971A] text-[#0F1C3F]"
+                                        : "bg-white/10 hover:bg-white/20 text-white"
+                                }`}
+                                title={isDiscussionBookmarked ? "Saved in your bookmarks" : "Save to bookmarks"}
+                            >
+                                <Bookmark className={`w-3.5 h-3.5 ${isDiscussionBookmarked ? "fill-[#0F1C3F]" : ""}`} />
+                                <span className="hidden sm:inline">{isDiscussionBookmarked ? "Bookmarked" : "Bookmark"}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowShareModal(true)}
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-xs transition-colors cursor-pointer"
+                                title="Share discussion"
+                            >
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Share</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    handleOpenReport({
+                                        discussionId: discussion.id,
+                                        itemTitle: discussion.title,
+                                        itemAuthor: discussion.author.name,
+                                    })
+                                }
+                                className="flex items-center gap-1.5 px-2 py-1 bg-white/5 hover:bg-red-500/20 text-white/70 hover:text-red-300 text-xs transition-colors cursor-pointer"
+                                title="Report this discussion"
+                            >
+                                <Flag className="w-3.5 h-3.5" />
+                                <span className="hidden md:inline">Report</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -606,11 +728,8 @@ export default function ThreadView({
                                     </span>
                                 </div>
 
-                                <div
-                                    className="text-[#2C2420] leading-relaxed text-base sm:text-lg mb-6 whitespace-pre-wrap"
-                                    style={{ fontFamily: "'Spectral', Georgia, serif" }}
-                                >
-                                    {opPost.content}
+                                <div className="mb-6">
+                                    <FormattedBody content={opPost.content} className="text-base sm:text-lg" />
                                 </div>
 
                                 {/* Discussion Tags */}
@@ -710,31 +829,43 @@ export default function ThreadView({
 
                                     <button
                                         type="button"
-                                        onClick={() => setBookmarked((b) => !b)}
+                                        onClick={handleToggleBookmark}
                                         className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
-                                            bookmarked ? "text-[#C8971A]" : "hover:text-[#C8971A]"
+                                            isDiscussionBookmarked ? "text-[#C8971A] font-semibold" : "hover:text-[#C8971A]"
                                         }`}
+                                        title={isDiscussionBookmarked ? "Saved to your bookmarks · Click to remove" : "Save to bookmarks"}
                                     >
-                                        <Bookmark className="w-4 h-4" />
-                                        <span>{bookmarked ? "Saved" : "Bookmark"}</span>
+                                        <Bookmark className={`w-4 h-4 ${isDiscussionBookmarked ? "fill-[#C8971A]" : ""}`} />
+                                        <span>
+                                            {isDiscussionBookmarked ? "Bookmarked" : "Bookmark"}
+                                            {(discussion.bookmarkCount ?? 0) > 0 ? ` (${discussion.bookmarkCount})` : ""}
+                                        </span>
                                     </button>
 
                                     <button
                                         type="button"
-                                        onClick={handleCopyThreadLink}
-                                        className="flex items-center gap-1.5 hover:text-[#B85428] transition-colors cursor-pointer ml-auto"
+                                        onClick={() =>
+                                            handleOpenReport({
+                                                discussionId: discussion.id,
+                                                itemTitle: discussion.title,
+                                                itemAuthor: discussion.author.name,
+                                            })
+                                        }
+                                        className="flex items-center gap-1.5 hover:text-red-600 transition-colors cursor-pointer text-[#9E8F85]"
+                                        title="Report this discussion"
                                     >
-                                        {copiedLink ? (
-                                            <>
-                                                <Check className="w-4 h-4 text-emerald-600" />
-                                                <span className="text-emerald-600">Copied</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Share2 className="w-4 h-4" />
-                                                <span>Share</span>
-                                            </>
-                                        )}
+                                        <Flag className="w-4 h-4" />
+                                        <span>Report</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowShareModal(true)}
+                                        className="flex items-center gap-1.5 hover:text-[#B85428] transition-colors cursor-pointer ml-auto"
+                                        title="Share this discussion"
+                                    >
+                                        <Share2 className="w-4 h-4" />
+                                        <span>Share</span>
                                     </button>
                                 </div>
                             </div>
@@ -784,6 +915,13 @@ export default function ThreadView({
                                     onLike={(id) => handleTogglePostLike(id)}
                                     onEdit={handleEditPost}
                                     onDelete={handleDeletePost}
+                                    onReport={(p) =>
+                                        handleOpenReport({
+                                            postId: p.id,
+                                            itemTitle: p.content.slice(0, 60),
+                                            itemAuthor: p.author.name,
+                                        })
+                                    }
                                     isLiked={likedSet.has(replyPost.id)}
                                 />
                             );
@@ -858,6 +996,26 @@ export default function ThreadView({
                     </div>
                 </div>
             )}
+
+            {/* Share Modal */}
+            {discussion && (
+                <ShareModal
+                    isOpen={showShareModal}
+                    onClose={() => setShowShareModal(false)}
+                    title={discussion.title}
+                    discussionId={discussion.id}
+                />
+            )}
+
+            {/* Report Modal */}
+            <ReportModal
+                isOpen={Boolean(reportTarget)}
+                onClose={() => setReportTarget(null)}
+                discussionId={reportTarget?.discussionId}
+                postId={reportTarget?.postId}
+                itemTitle={reportTarget?.itemTitle}
+                itemAuthor={reportTarget?.itemAuthor}
+            />
         </div>
     );
 }

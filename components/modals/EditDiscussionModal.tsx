@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Loader2, Edit3 } from "lucide-react";
 import { TricolorStripe } from "../Symbols";
 import { forumCategories } from "@/data/forumData";
-import { updateDiscussion } from "@/app/actions/forum";
+import { updateDiscussion, getCategoriesAction } from "@/app/actions/forum";
 import { useAuth } from "@/context/AuthContext";
 import type { Discussion } from "@/types/forum";
 
@@ -24,10 +24,26 @@ export default function EditDiscussionModal({
     const { user } = useAuth();
     const [title, setTitle] = useState(discussion.title);
     const [category, setCategory] = useState(discussion.category || "history");
+    const [categories, setCategories] = useState<{ id: string; name: string; color?: string }[]>(forumCategories);
     const [body, setBody] = useState(discussion.body || discussion.excerpt || "");
     const [tagsInput, setTagsInput] = useState((discussion.tags || []).join(", "));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        let active = true;
+        getCategoriesAction()
+            .then((cats) => {
+                if (active && cats && cats.length > 0) {
+                    setCategories(cats);
+                }
+            })
+            .catch(() => {});
+        return () => {
+            active = false;
+        };
+    }, [isOpen]);
 
     const [prevDiscussion, setPrevDiscussion] = useState(discussion);
     if (discussion !== prevDiscussion) {
@@ -153,7 +169,7 @@ export default function EditDiscussionModal({
                             onChange={(e) => setCategory(e.target.value)}
                             className="w-full px-3.5 py-2.5 bg-white border border-[#D4A373]/40 rounded-sm text-sm text-[#0F1C3F] focus:outline-none focus:border-[#B85428] focus:ring-1 focus:ring-[#B85428] cursor-pointer"
                         >
-                            {forumCategories.map((cat) => (
+                            {categories.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
                                 </option>

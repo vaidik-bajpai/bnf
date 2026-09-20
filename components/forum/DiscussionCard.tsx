@@ -1,6 +1,6 @@
 'use client';
 
-import { MessageSquare, Eye, Clock, Star, Layers } from "lucide-react";
+import { MessageSquare, Eye, Clock, Star, Layers, Bookmark, Share2 } from "lucide-react";
 import type { Discussion } from "@/types/forum";
 import { forumCategories } from "@/data/forumData";
 
@@ -8,6 +8,8 @@ interface DiscussionCardProps {
     discussion: Discussion;
     onClick: () => void;
     megaThreadTitle?: string;
+    onToggleBookmark?: (discussionId: string) => void;
+    onShare?: (discussion: Discussion) => void;
 }
 
 function formatRelativeTime(dateInput?: Date | string): string {
@@ -31,10 +33,12 @@ export default function DiscussionCard({
     discussion,
     onClick,
     megaThreadTitle,
+    onToggleBookmark,
+    onShare,
 }: DiscussionCardProps) {
     const categoryObj = forumCategories.find((c) => c.id === discussion.category);
-    const categoryColor = categoryObj?.color || "#B85428";
-    const categoryName = categoryObj?.name || discussion.categoryLabel || "General";
+    const categoryColor = discussion.categoryColor || categoryObj?.color || "#B85428";
+    const categoryName = discussion.categoryLabel || categoryObj?.name || "General";
 
     const author = discussion.author || {
         name: "Member",
@@ -45,7 +49,7 @@ export default function DiscussionCard({
     return (
         <div
             onClick={onClick}
-            className="bg-white border border-[#EDE8DF] p-5 cursor-pointer hover:border-[#B85428]/50 hover:shadow-md transition-all group"
+            className="bg-white border border-[#EDE8DF] p-5 cursor-pointer hover:border-[#B85428]/50 hover:shadow-md transition-all group relative"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
             <div className="flex items-center gap-2 mb-2.5">
@@ -66,6 +70,41 @@ export default function DiscussionCard({
                         <Layers className="w-3 h-3 text-[#B85428]" /> {megaThreadTitle}
                     </span>
                 )}
+
+                {/* Card Quick Action Icons (Bookmark & Share) */}
+                <div className="ml-auto flex items-center gap-1">
+                    {onToggleBookmark && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleBookmark(discussion.id);
+                            }}
+                            className={`p-1.5 rounded-xs transition-colors cursor-pointer ${
+                                discussion.isBookmarked
+                                    ? "text-[#C8971A] hover:text-[#A07612]"
+                                    : "text-[#9E8F85] hover:text-[#C8971A]"
+                            }`}
+                            title={discussion.isBookmarked ? "Remove bookmark" : "Save bookmark"}
+                        >
+                            <Bookmark className={`w-3.5 h-3.5 ${discussion.isBookmarked ? "fill-[#C8971A]" : ""}`} />
+                        </button>
+                    )}
+
+                    {onShare && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onShare(discussion);
+                            }}
+                            className="p-1.5 text-[#9E8F85] hover:text-[#B85428] rounded-xs transition-colors cursor-pointer"
+                            title="Share discussion"
+                        >
+                            <Share2 className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="flex gap-3.5 sm:gap-4">

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Clock, ThumbsUp, MessageSquare, Share2, Check, Edit3, Trash2, Loader2 } from "lucide-react";
+import { Clock, ThumbsUp, MessageSquare, Share2, Check, Edit3, Trash2, Loader2, Flag } from "lucide-react";
 import type { Post } from "@/types/forum";
 import ReplyReference from "./ReplyReference";
+import FormattedBody from "./FormattedBody";
 
 interface PostCardProps {
     post: Post;
@@ -14,6 +15,7 @@ interface PostCardProps {
     onLike?: (postId: string) => void;
     onEdit?: (postId: string, newContent: string) => Promise<void>;
     onDelete?: (postId: string) => Promise<void>;
+    onReport?: (post: Post) => void;
     isLiked?: boolean;
 }
 
@@ -43,6 +45,7 @@ export default function PostCard({
     onLike,
     onEdit,
     onDelete,
+    onReport,
     isLiked = false,
 }: PostCardProps) {
     const [copied, setCopied] = useState(false);
@@ -200,11 +203,8 @@ export default function PostCard({
                             </div>
                         </div>
                     ) : (
-                        <div
-                            className="text-[#2C2420] text-[0.95rem] leading-relaxed mb-4 whitespace-pre-wrap"
-                            style={{ fontFamily: "'Spectral', Georgia, serif" }}
-                        >
-                            {post.content}
+                        <div className="mb-4">
+                            <FormattedBody content={post.content} className="text-[0.95rem]" />
                         </div>
                     )}
 
@@ -312,6 +312,18 @@ export default function PostCard({
                                     <span>Delete</span>
                                 </button>
                             )
+                        )}
+
+                        {onReport && (
+                            <button
+                                type="button"
+                                onClick={() => onReport(post)}
+                                className="flex items-center gap-1.5 hover:text-red-600 transition-colors cursor-pointer text-[#9E8F85]"
+                                title="Report this contribution"
+                            >
+                                <Flag className="w-3.5 h-3.5" />
+                                <span>Report</span>
+                            </button>
                         )}
 
                         <button

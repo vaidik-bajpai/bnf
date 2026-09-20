@@ -15,7 +15,7 @@ export default function Footer() {
                                 className="text-white font-bold text-sm tracking-[0.12em] uppercase leading-tight"
                                 style={{ fontFamily: "'Fraunces', serif" }}
                             >
-                                Indic Civilizational Forum
+                                BHARAT-GANRAJYA Nationalists Front
                             </div>
                             <div
                                 className="text-[#C8971A]/60 text-[10px] tracking-widest mt-0.5"
@@ -102,7 +102,7 @@ export default function Footer() {
             <div className="border-t border-white/8">
                 <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="text-white/20 text-xs">
-                        &copy; 2026 Indic Civilizational Forum. All rights reserved.
+                        &copy; 2026 BHARAT-GANRAJYA Nationalists Front. All rights reserved.
                     </div>
                     <div className="flex items-center gap-3 text-white/20 text-xs">
                         <AshokaCakra className="w-4 h-4 text-[#B85428]/40" />

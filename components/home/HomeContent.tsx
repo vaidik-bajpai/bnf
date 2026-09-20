@@ -48,7 +48,7 @@ export default function HomeContent({
                         About This Platform
                     </h2>
                     <p className="text-white/60 text-lg leading-relaxed mb-6" style={{ fontFamily: "'Spectral', serif" }}>
-                        The Indic Civilizational Forum is a digital platform dedicated to the rigorous, pluralistic, and intellectually honest exploration of India&apos;s civilizational heritage. We believe that history is best understood through dialogue — across disciplines, perspectives, and generations.
+                        The BHARAT-GANRAJYA Nationalists Front is a digital platform dedicated to the rigorous, pluralistic, and intellectually honest exploration of India&apos;s civilizational heritage. We believe that history is best understood through dialogue — across disciplines, perspectives, and generations.
                     </p>
                     <p className="text-white/50 text-base leading-relaxed mb-10" style={{ fontFamily: "'Spectral', serif" }}>
                         We welcome scholars, students, artists, activists, and curious minds. Our commitment is to depth over sensationalism, nuance over rhetoric, and India&apos;s full and complex story over any partial reading of it.

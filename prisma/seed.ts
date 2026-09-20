@@ -336,7 +336,7 @@ const seedDiscussions = [
 ];
 
 async function main() {
-    console.log("Seeding Indic Civilizational Forum database...");
+    console.log("Seeding BHARAT-GANRAJYA Nationalists Front database...");
 
     // 1. Seed Categories
     for (const cat of categories) {
