@@ -1,6 +1,6 @@
 import { AshokaCakra, LotusSmall, TricolorStripe } from "../Symbols";
 import HomeHero from "./HomeHero";
-import HeritageSection from "./HeritageSection";
+import AwakeningSection from "./AwakeningSection";
 import IdeasSection from "./IdeasSection";
 import LeadersSection from "./LeadersSection";
 import KnowledgeSection from "./KnowledgeSection";
@@ -21,7 +21,7 @@ export default function HomeContent({
         <>
             <HomeHero onViewForum={onViewForum} />
             <TricolorStripe />
-            <HeritageSection />
+            <AwakeningSection />
             <IdeasSection />
             <LeadersSection />
             <KnowledgeSection />

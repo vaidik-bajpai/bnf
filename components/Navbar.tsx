@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Menu, X, Plus, User as UserIcon, LogOut } from "lucide-react";
-import { AshokaCakra, TricolorStripe } from "./Symbols";
+import { AshokaCakra, NationalEmblemLogo, TricolorStripe } from "./Symbols";
 import type { PageState } from "@/types/forum";
 import { useAuth } from "@/context/AuthContext";
 
@@ -38,7 +38,7 @@ export default function Navbar({
             }
 
             // Check sections by visibility from bottom to top
-            const sections = ["about", "forum", "ideas", "heritage"];
+            const sections = ["about", "forum", "ideas", "awakening", "heritage"];
             for (const id of sections) {
                 const el = document.getElementById(id);
                 if (el) {
@@ -68,12 +68,7 @@ export default function Navbar({
             <TricolorStripe />
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                 {/* 1. Left: Brand Logo & Title with smooth expand/slide/fade transition */}
-                <div
-                    className={`flex items-center transition-all duration-500 ease-in-out ${isHomeSection
-                        ? "max-w-0 opacity-0 -translate-x-4 pointer-events-none overflow-hidden mr-0"
-                        : "max-w-[340px] sm:max-w-[420px] opacity-100 translate-x-0 mr-6 lg:mr-8 xl:mr-10 overflow-hidden shrink-0"
-                        }`}
-                >
+                <div className="flex items-center mr-6 lg:mr-8 xl:mr-10 shrink-0">
                     <button
                         onClick={() => {
                             if (user) onNavigate({ view: "forum" });
@@ -83,8 +78,14 @@ export default function Navbar({
                         className="flex items-center gap-3 text-left cursor-pointer group shrink-0"
                         title="BHARAT-GANRAJYA Nationalists Front"
                     >
-                        <AshokaCakra className="w-8 h-8 text-[#C8971A] group-hover:text-[#B85428] transition-colors shrink-0" />
-                        <div className="whitespace-nowrap">
+                        <NationalEmblemLogo className="w-12 h-10 transition-transform group-hover:scale-105 shrink-0 drop-shadow-[0_2px_8px_rgba(0,229,255,0.4)]" />
+                        <div
+                            className={`whitespace-nowrap transition-all duration-500 overflow-hidden ${
+                                isHomeSection
+                                    ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
+                                    : "max-w-[340px] opacity-100 translate-x-0"
+                            }`}
+                        >
                             <div
                                 className="text-white font-bold text-xs sm:text-sm tracking-[0.15em] uppercase leading-tight truncate"
                                 style={{ fontFamily: "'Fraunces', serif" }}
@@ -97,10 +98,11 @@ export default function Navbar({
 
                 {/* 2. Center / Nav Items: Smoothly transitions between stretched and centered */}
                 <div
-                    className={`hidden lg:flex flex-1 items-center transition-all duration-500 ease-in-out ${isHomeSection
-                        ? "justify-between mr-12 xl:mr-20 2xl:mr-28"
-                        : "justify-center gap-8 xl:gap-11 mr-4 xl:mr-8"
-                        }`}
+                    className={`hidden lg:flex flex-1 items-center transition-all duration-500 ease-in-out ${
+                        isHomeSection
+                            ? "justify-end gap-10 mr-8 xl:mr-12"
+                            : "justify-center gap-8 xl:gap-11 mr-4 xl:mr-8"
+                    }`}
                 >
                     {user ? (
                         <>
@@ -141,17 +143,17 @@ export default function Navbar({
                                 onClick={() => {
                                     if (pageState.view !== "home") {
                                         onNavigate({ view: "home" });
-                                        setTimeout(() => onScrollToSection("heritage"), 100);
+                                        setTimeout(() => onScrollToSection("awakening"), 100);
                                     } else {
-                                        onScrollToSection("heritage");
+                                        onScrollToSection("awakening");
                                     }
                                 }}
-                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "heritage" && pageState.view === "home"
+                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${(currentSection === "awakening" || currentSection === "heritage") && pageState.view === "home"
                                     ? "text-[#C8971A] border-[#C8971A]"
                                     : "text-white/70 hover:text-white border-transparent"
                                     }`}
                             >
-                                Heritage
+                                Awakening
                             </button>
                             <button
                                 onClick={() => {
@@ -284,12 +286,12 @@ export default function Navbar({
                                 </button>
                                 <button
                                     onClick={() => {
-                                        onScrollToSection("heritage");
+                                        onScrollToSection("awakening");
                                         setMenuOpen(false);
                                     }}
                                     className="text-left text-md font-semibold tracking-wider uppercase text-white/80 py-2"
                                 >
-                                    Heritage
+                                    Awakening
                                 </button>
                                 <button
                                     onClick={() => {

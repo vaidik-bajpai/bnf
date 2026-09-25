@@ -10,6 +10,7 @@ interface DiscussionCardProps {
     megaThreadTitle?: string;
     onToggleBookmark?: (discussionId: string) => void;
     onShare?: (discussion: Discussion) => void;
+    dark?: boolean;
 }
 
 function formatRelativeTime(dateInput?: Date | string): string {
@@ -35,6 +36,7 @@ export default function DiscussionCard({
     megaThreadTitle,
     onToggleBookmark,
     onShare,
+    dark = false,
 }: DiscussionCardProps) {
     const categoryObj = forumCategories.find((c) => c.id === discussion.category);
     const categoryColor = discussion.categoryColor || categoryObj?.color || "#B85428";
@@ -49,25 +51,29 @@ export default function DiscussionCard({
     return (
         <div
             onClick={onClick}
-            className="bg-white border border-[#EDE8DF] p-5 cursor-pointer hover:border-[#B85428]/50 hover:shadow-md transition-all group relative"
+            className={`p-5 cursor-pointer transition-all duration-300 group relative ${
+                dark
+                    ? "bg-[#0B1838]/85 hover:bg-[#0E204A] border border-white/10 hover:border-[#E5A93C]/50 rounded-xl shadow-lg backdrop-blur-sm"
+                    : "bg-white border border-[#EDE8DF] hover:border-[#B85428]/50 hover:shadow-md"
+            }`}
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
             <div className="flex items-center gap-2 mb-2.5">
                 {discussion.pinned && (
-                    <span className="text-[#C8971A] text-[11px] font-semibold tracking-widest uppercase flex items-center gap-1 mr-2">
-                        <Star className="w-3 h-3 fill-[#C8971A]" /> Pinned
+                    <span className="text-[#E5A93C] text-[11px] font-semibold tracking-widest uppercase flex items-center gap-1 mr-2">
+                        <Star className="w-3 h-3 fill-[#E5A93C]" /> Pinned
                     </span>
                 )}
                 <span
-                    className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full text-white"
+                    className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full text-white shadow-xs"
                     style={{ backgroundColor: categoryColor }}
                 >
                     {categoryName}
                 </span>
 
                 {megaThreadTitle && (
-                    <span className="text-xs text-[#9E8F85] flex items-center gap-1 truncate max-w-[220px]">
-                        <Layers className="w-3 h-3 text-[#B85428]" /> {megaThreadTitle}
+                    <span className={`text-xs flex items-center gap-1 truncate max-w-[220px] ${dark ? "text-white/50" : "text-[#9E8F85]"}`}>
+                        <Layers className="w-3 h-3 text-[#E5A93C]" /> {megaThreadTitle}
                     </span>
                 )}
 
@@ -82,12 +88,14 @@ export default function DiscussionCard({
                             }}
                             className={`p-1.5 rounded-xs transition-colors cursor-pointer ${
                                 discussion.isBookmarked
-                                    ? "text-[#C8971A] hover:text-[#A07612]"
+                                    ? "text-[#E5A93C] hover:text-[#FBBF24]"
+                                    : dark
+                                    ? "text-white/40 hover:text-[#E5A93C]"
                                     : "text-[#9E8F85] hover:text-[#C8971A]"
                             }`}
                             title={discussion.isBookmarked ? "Remove bookmark" : "Save bookmark"}
                         >
-                            <Bookmark className={`w-3.5 h-3.5 ${discussion.isBookmarked ? "fill-[#C8971A]" : ""}`} />
+                            <Bookmark className={`w-3.5 h-3.5 ${discussion.isBookmarked ? "fill-[#E5A93C]" : ""}`} />
                         </button>
                     )}
 
@@ -98,7 +106,9 @@ export default function DiscussionCard({
                                 e.stopPropagation();
                                 onShare(discussion);
                             }}
-                            className="p-1.5 text-[#9E8F85] hover:text-[#B85428] rounded-xs transition-colors cursor-pointer"
+                            className={`p-1.5 rounded-xs transition-colors cursor-pointer ${
+                                dark ? "text-white/40 hover:text-[#E5A93C]" : "text-[#9E8F85] hover:text-[#B85428]"
+                            }`}
                             title="Share discussion"
                         >
                             <Share2 className="w-3.5 h-3.5" />
@@ -112,11 +122,11 @@ export default function DiscussionCard({
                     <img
                         src={author.image}
                         alt={author.name}
-                        className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-[#EDE8DF]"
+                        className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border ${dark ? "border-white/15" : "border-[#EDE8DF]"}`}
                     />
                 ) : (
                     <div
-                        className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                        className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ring-1 ring-white/20"
                         style={{ backgroundColor: author.bg || "#B85428" }}
                     >
                         {author.initials}
@@ -125,18 +135,20 @@ export default function DiscussionCard({
 
                 <div className="flex-1 min-w-0">
                     <h3
-                        className="font-semibold text-[#1C1917] text-[0.98rem] leading-snug mb-1.5 group-hover:text-[#B85428] transition-colors line-clamp-2"
+                        className={`font-semibold text-[0.98rem] leading-snug mb-1.5 transition-colors line-clamp-2 ${
+                            dark ? "text-white group-hover:text-[#E5A93C]" : "text-[#1C1917] group-hover:text-[#B85428]"
+                        }`}
                         style={{ fontFamily: "'Spectral', serif" }}
                     >
                         {discussion.title}
                     </h3>
 
-                    <p className="text-[#6B5B4E] text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3">
+                    <p className={`text-xs sm:text-sm leading-relaxed line-clamp-2 mb-3 ${dark ? "text-white/70" : "text-[#6B5B4E]"}`}>
                         {discussion.excerpt || discussion.description || discussion.body}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-[#9E8F85]">
-                        <span className="font-medium text-[#4A403A]">
+                    <div className={`flex flex-wrap items-center gap-4 text-xs ${dark ? "text-white/50" : "text-[#9E8F85]"}`}>
+                        <span className={`font-medium ${dark ? "text-white/85" : "text-[#4A403A]"}`}>
                             {author.name}
                         </span>
 
