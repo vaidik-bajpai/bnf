@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowRight, ChevronDown, Compass } from 'lucide-react';
 import HeroChakraWheel from './HeroChakraWheel';
-import HeroTricolorRibbons from './HeroTricolorRibbons';
+import HeroCanvasWaves from './HeroCanvasWaves';
 import HeroEmbers from './HeroEmbers';
 
 interface HomeHeroProps {
@@ -35,6 +35,8 @@ export default function HomeHero({ onViewForum }: HomeHeroProps) {
         <div className="absolute inset-0 bg-gradient-to-r from-[#040A1A]/35 via-transparent to-[#040A1A]/35" />
       </div>
 
+      {/* ================= LAYER 1: ANIMATED TRICOLOR WAVES CANVAS (WAVES.JPEG STYLE) ================= */}
+      <HeroCanvasWaves />
 
       {/* ================= LAYER 2: ANIMATED ASHOKA CHAKRA WHEEL (SPINNING + GLOW) ================= */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-10">
