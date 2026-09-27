@@ -1,26 +1,43 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CornerDownRight, X, Loader2, Send, Lock } from "lucide-react";
 import type { Post } from "@/types/forum";
 import { useAuth } from "@/context/AuthContext";
 
 interface ReplyComposerProps {
     replyingToPost: Post | null;
+    quotedText?: string | null;
     onCancelReplyReference: () => void;
+    onClearQuote?: () => void;
     onSubmitReply: (content: string, replyToPostId: string | null) => Promise<void> | void;
     isSubmitting?: boolean;
 }
 
 export default function ReplyComposer({
     replyingToPost,
+    quotedText,
     onCancelReplyReference,
+    onClearQuote,
     onSubmitReply,
     isSubmitting = false,
 }: ReplyComposerProps) {
     const { user, requireAuth } = useAuth();
     const isAuthenticated = Boolean(user);
     const [replyText, setReplyText] = useState("");
+
+    // Sync incoming quoted text into composer
+    useEffect(() => {
+        if (quotedText) {
+            setReplyText((prev) => {
+                const quoteBlock = `> ${quotedText}\n\n`;
+                if (!prev.includes(quotedText)) {
+                    return prev ? `${prev}\n\n${quoteBlock}` : quoteBlock;
+                }
+                return prev;
+            });
+        }
+    }, [quotedText]);
 
     const authorName = replyingToPost?.author?.name || "Member";
     const authorHandle = replyingToPost?.author?.username || authorName.toLowerCase().replace(/\s+/g, "_");
@@ -41,6 +58,7 @@ export default function ReplyComposer({
 
         await onSubmitReply(replyText.trim(), replyingToPost?.id || null);
         setReplyText("");
+        if (onClearQuote) onClearQuote();
     };
 
     return (

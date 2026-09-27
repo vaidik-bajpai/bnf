@@ -25,28 +25,42 @@ import {
     Zap,
     Award,
     Star,
+    Heart,
+    Video,
+    Film,
+    FileText,
+    Tag as TagIcon,
+    Filter,
     X,
 } from "lucide-react";
 import { AshokaCakra, TricolorStripe } from "../Symbols";
-import { forumCategories } from "@/data/forumData";
+import { forumCategories, megaCategories } from "@/data/forumData";
 import {
     getMegaThreadsAction,
     getDiscussions,
     getCategoriesAction,
     getForumStatsAction,
     toggleBookmark,
+    toggleCategoryStarAction,
+    toggleCategoryFavoriteAction,
+    addCategoryTagAction,
 } from "@/app/actions/forum";
 import { useAuth } from "@/context/AuthContext";
-import type { MegaThread, Discussion } from "@/types/forum";
+import type { MegaThread, Discussion, ForumCategory } from "@/types/forum";
 import MegaThreadCard from "./MegaThreadCard";
 import DiscussionCard from "./DiscussionCard";
 import WhatsNewCarousel from "./WhatsNewCarousel";
 import ShareModal from "../modals/ShareModal";
+import ForumBottomBar from "./ForumBottomBar";
 
 interface ForumHomeProps {
+    initialCategory?: string;
+    initialMegaCategory?: string;
+    initialTag?: string;
     onViewThread: (id: string) => void;
     onViewMegaThread: (id: string) => void;
     onNewDiscussion: () => void;
+    onOpenHowToUse?: () => void;
 }
 
 // 6 Core Featured Categories matching the 6-card grid from reference layout
@@ -114,13 +128,17 @@ const featuredCategoryCards = [
 ];
 
 export default function ForumHome({
+    initialCategory,
+    initialMegaCategory,
+    initialTag,
     onViewThread,
     onViewMegaThread,
     onNewDiscussion,
+    onOpenHowToUse,
 }: ForumHomeProps) {
     const { user, requireAuth } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [activeCategory, setActiveCategory] = useState<string | null>(initialCategory || null);
     const [viewMode, setViewMode] = useState<"discussions" | "megathreads">("discussions");
     const [megaThreadFilter, setMegaThreadFilter] = useState<"featured" | "active" | "popular">("featured");
     const [discussionFilter, setDiscussionFilter] = useState<"latest" | "trending" | "pinned" | "bookmarked">("latest");
@@ -128,9 +146,24 @@ export default function ForumHome({
 
     const [allMegaThreads, setAllMegaThreads] = useState<MegaThread[]>([]);
     const [allDiscussions, setAllDiscussions] = useState<Discussion[]>([]);
-    const [categories, setCategories] = useState<{ id: string; name: string; count: number; color: string }[]>([]);
+    const [categories, setCategories] = useState<ForumCategory[]>(forumCategories);
     const [stats, setStats] = useState({ megaThreadCount: 0, discussionCount: 0, categoryCount: 0, scholarCount: 0, postCount: 0 });
     const [isLoading, setIsLoading] = useState(true);
+
+    // Advanced Forum Architecture states
+    const [activeMegaCategory, setActiveMegaCategory] = useState<string>(initialMegaCategory || "content-gallery");
+    const [activeForumType, setActiveForumType] = useState<"all" | "discussion" | "suggestion" | "question">("all");
+    const [activeTag, setActiveTag] = useState<string | null>(initialTag || null);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const itemsPerPage = 6;
+    const [addingTagCatId, setAddingTagCatId] = useState<string | null>(null);
+    const [newTagInput, setNewTagInput] = useState<string>("");
+
+    useEffect(() => {
+        if (initialCategory !== undefined) setActiveCategory(initialCategory || null);
+        if (initialMegaCategory !== undefined) setActiveMegaCategory(initialMegaCategory || "content-gallery");
+        if (initialTag !== undefined) setActiveTag(initialTag || null);
+    }, [initialCategory, initialMegaCategory, initialTag]);
 
     useEffect(() => {
         let active = true;
@@ -153,7 +186,7 @@ export default function ForumHome({
             setAllMegaThreads((dbMts || []) as unknown as MegaThread[]);
             setAllDiscussions((dbDiscs || []) as unknown as Discussion[]);
             if (dbCats && dbCats.length > 0) {
-                setCategories(dbCats);
+                setCategories(dbCats as unknown as ForumCategory[]);
             }
             if (dbStats) {
                 setStats(dbStats);
@@ -168,6 +201,82 @@ export default function ForumHome({
             active = false;
         };
     }, [activeCategory, searchQuery, discussionFilter, user?.id]);
+
+    // Handle toggle category star
+    const handleToggleCategoryStar = async (catId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user) {
+            requireAuth(() => handleToggleCategoryStar(catId, e));
+            return;
+        }
+
+        const targetCat = categories.find((c) => c.id === catId);
+        const nextStarred = !(targetCat?.isStarred);
+        setCategories((prev) =>
+            prev.map((c) => (c.id === catId ? { ...c, isStarred: nextStarred } : c))
+        );
+
+        try {
+            const res = await toggleCategoryStarAction(catId, user.id);
+            setCategories((prev) =>
+                prev.map((c) => (c.id === catId ? { ...c, isStarred: res.isStarred } : c))
+            );
+        } catch (err) {
+            console.error("Failed to toggle category star:", err);
+            setCategories((prev) =>
+                prev.map((c) => (c.id === catId ? { ...c, isStarred: !nextStarred } : c))
+            );
+        }
+    };
+
+    // Handle toggle category favorite
+    const handleToggleCategoryFavorite = async (catId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user) {
+            requireAuth(() => handleToggleCategoryFavorite(catId, e));
+            return;
+        }
+
+        const targetCat = categories.find((c) => c.id === catId);
+        const nextFav = !(targetCat?.isFavorite);
+        setCategories((prev) =>
+            prev.map((c) => (c.id === catId ? { ...c, isFavorite: nextFav } : c))
+        );
+
+        try {
+            const res = await toggleCategoryFavoriteAction(catId, user.id);
+            setCategories((prev) =>
+                prev.map((c) => (c.id === catId ? { ...c, isFavorite: res.isFavorite } : c))
+            );
+        } catch (err) {
+            console.error("Failed to toggle category favorite:", err);
+            setCategories((prev) =>
+                prev.map((c) => (c.id === catId ? { ...c, isFavorite: !nextFav } : c))
+            );
+        }
+    };
+
+    // Handle add tag to category for better search results
+    const handleAddCategoryTag = async (catId: string, e: React.FormEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const tag = newTagInput.trim().toLowerCase().replace(/^#/, "");
+        if (!tag) {
+            setAddingTagCatId(null);
+            return;
+        }
+
+        try {
+            const res = await addCategoryTagAction(catId, tag);
+            setCategories((prev) =>
+                prev.map((c) => (c.id === catId ? { ...c, tags: res.tags } : c))
+            );
+            setNewTagInput("");
+            setAddingTagCatId(null);
+        } catch (err) {
+            console.error("Failed to add category tag:", err);
+        }
+    };
 
     // Handle toggle bookmark
     const handleToggleBookmark = async (discussionId: string) => {
@@ -227,12 +336,36 @@ export default function ForumHome({
         return list;
     }, [allMegaThreads, activeCategory, searchQuery, megaThreadFilter]);
 
+    // Displayed smaller categories according to selected Mega Category
+    const displayedCategories = useMemo(() => {
+        if (!activeMegaCategory || activeMegaCategory === "all") {
+            return categories;
+        }
+        const mega = megaCategories.find((m) => m.id === activeMegaCategory);
+        if (!mega) return categories;
+        return categories.filter((c) => mega.categoryIds.includes(c.id));
+    }, [categories, activeMegaCategory]);
+
     // Filtered Discussions
     const filteredDiscussions = useMemo(() => {
         let list = [...allDiscussions];
         if (activeCategory) {
             list = list.filter((d) => d.category === activeCategory);
+        } else if (activeMegaCategory && activeMegaCategory !== "all") {
+            const mega = megaCategories.find((m) => m.id === activeMegaCategory);
+            if (mega) {
+                list = list.filter((d) => mega.categoryIds.includes(d.category));
+            }
         }
+
+        if (activeForumType !== "all") {
+            list = list.filter((d) => (d.forumType || "discussion") === activeForumType);
+        }
+
+        if (activeTag) {
+            list = list.filter((d) => d.tags?.includes(activeTag));
+        }
+
         if (searchQuery.trim()) {
             const q = searchQuery.toLowerCase().trim();
             list = list.filter(
@@ -252,7 +385,14 @@ export default function ForumHome({
             list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         }
         return list;
-    }, [allDiscussions, activeCategory, searchQuery, discussionFilter]);
+    }, [allDiscussions, activeCategory, activeMegaCategory, activeForumType, activeTag, searchQuery, discussionFilter]);
+
+    const totalItems = filteredDiscussions.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+    const paginatedDiscussions = useMemo(() => {
+        const start = (currentPage - 1) * itemsPerPage;
+        return filteredDiscussions.slice(start, start + itemsPerPage);
+    }, [filteredDiscussions, currentPage, itemsPerPage]);
 
     // MegaThread lookup map
     const megaThreadMap = useMemo(() => {
@@ -389,70 +529,233 @@ export default function ForumHome({
                     </div>
                 </div>
 
-                {/* 2. CATEGORIES (4 Cards) + INTEGRATED SEARCH SECTION (Spanning the right column) */}
+                {/* 2. MEGA CATEGORIES & SMALLER CATEGORIES GRID */}
                 <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[#E5A93C] text-[11px] font-bold tracking-[0.2em] uppercase">
-                                EXPLORE INQUIRIES & SEARCH ARCHIVE
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                        {/* Mega Categories Switcher Tabs */}
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#E5A93C] mr-1 flex items-center gap-1.5">
+                                <Layers className="w-3.5 h-3.5" /> Mega Category:
                             </span>
+
+                            {megaCategories.map((m) => {
+                                const isMegaActive = activeMegaCategory === m.id;
+                                return (
+                                    <button
+                                        key={m.id}
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveMegaCategory(m.id);
+                                            setActiveCategory(null);
+                                            setCurrentPage(1);
+                                        }}
+                                        className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            isMegaActive
+                                                ? "bg-gradient-to-r from-[#B85428] to-[#E5A93C] text-white shadow-md shadow-[#E5A93C]/20 border border-[#E5A93C]"
+                                                : "bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10"
+                                        }`}
+                                    >
+                                        <span>{m.name}</span>
+                                        {m.id === "content-gallery" && (
+                                            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-black/30 font-bold uppercase tracking-wider text-amber-200">
+                                                Featured
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setActiveMegaCategory("all");
+                                    setActiveCategory(null);
+                                    setCurrentPage(1);
+                                }}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer ${
+                                    activeMegaCategory === "all"
+                                        ? "bg-[#E5A93C] text-slate-950 font-bold"
+                                        : "bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10"
+                                }`}
+                            >
+                                All Categories
+                            </button>
                         </div>
 
                         {activeCategory && (
                             <button
+                                type="button"
                                 onClick={() => setActiveCategory(null)}
-                                className="bg-[#E5A93C]/20 hover:bg-[#E5A93C]/30 text-[#E5A93C] border border-[#E5A93C]/40 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                className="bg-[#E5A93C]/20 hover:bg-[#E5A93C]/30 text-[#E5A93C] border border-[#E5A93C]/40 px-2.5 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer self-start sm:self-auto"
                             >
-                                <span>Clear Filter</span>
+                                <span>Clear Category Filter</span>
                                 <X className="w-3 h-3" />
                             </button>
                         )}
                     </div>
 
-                    {/* Main Grid: 2 Columns for 4 Category Cards, 1 Column for Search Section */}
+                    {/* Main Grid: 2 Columns for Smaller Category Cards (Videos, Vlogs, Community Posts, etc.), 1 Column for Search Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-4 lg:gap-4.5 items-stretch">
 
-                        {/* LEFT & CENTER: 4 Category Cards in 2x2 grid (Col Span 2) */}
+                        {/* LEFT & CENTER: Smaller Category Cards in 2x2 grid (Col Span 2) */}
                         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 lg:gap-4.5">
-                            {featuredCategoryCards.slice(0, 4).map((cat) => {
-                                const isSelected = activeCategory === cat.filterId;
+                            {displayedCategories.slice(0, 4).map((cat) => {
+                                const isSelected = activeCategory === cat.id;
                                 return (
                                     <div
                                         key={cat.id}
                                         onClick={() => {
-                                            setActiveCategory(isSelected ? null : cat.filterId);
+                                            setActiveCategory(isSelected ? null : cat.id);
+                                            setCurrentPage(1);
                                             scrollToFeed();
                                         }}
-                                        className={`rounded-2xl p-4 sm:p-4.5 lg:p-5 transition-all duration-300 group cursor-pointer backdrop-blur-md shadow-lg flex flex-col justify-between ${isSelected
-                                            ? "bg-[#102454] border-2 border-[#E5A93C] shadow-[0_0_25px_rgba(229,169,60,0.35)] transform -translate-y-1"
-                                            : "bg-[#0A1633]/85 hover:bg-[#0D1E45] border border-white/10 hover:border-[#E5A93C]/50 hover:-translate-y-1 hover:shadow-xl"
-                                            }`}
+                                        className={`rounded-2xl p-4 sm:p-4.5 transition-all duration-300 group cursor-pointer backdrop-blur-md shadow-lg flex flex-col justify-between ${
+                                            isSelected
+                                                ? "bg-[#102454] border-2 border-[#E5A93C] shadow-[0_0_25px_rgba(229,169,60,0.35)] transform -translate-y-1"
+                                                : "bg-[#0A1633]/85 hover:bg-[#0D1E45] border border-white/10 hover:border-[#E5A93C]/50 hover:-translate-y-1 hover:shadow-xl"
+                                        }`}
                                     >
-                                        <div className="flex items-center gap-3.5 sm:gap-4">
-                                            {/* Circular/Rounded Icon Container */}
-                                            <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 border ${cat.iconBg} transition-transform group-hover:scale-110 shadow-sm [&>svg]:w-5 [&>svg]:h-5 sm:[&>svg]:w-6 sm:[&>svg]:h-6`}>
-                                                {cat.icon}
+                                        <div>
+                                            <div className="flex items-start justify-between gap-3 mb-2">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    {/* Circular/Rounded Icon Container */}
+                                                    <div
+                                                        className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center shrink-0 border border-white/20 text-white shadow-sm transition-transform group-hover:scale-105"
+                                                        style={{ backgroundColor: cat.color || "#B85428" }}
+                                                    >
+                                                        {cat.id === "videos" ? (
+                                                            <Video className="w-5 h-5 text-white" />
+                                                        ) : cat.id === "vlogs" ? (
+                                                            <Film className="w-5 h-5 text-white" />
+                                                        ) : cat.id === "community-posts" ? (
+                                                            <FileText className="w-5 h-5 text-white" />
+                                                        ) : (
+                                                            <Layers className="w-5 h-5 text-white" />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Title & Subtitle */}
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className="text-xs sm:text-sm font-bold tracking-wider uppercase text-white group-hover:text-[#E5A93C] transition-colors truncate">
+                                                            {cat.name}
+                                                        </h3>
+                                                        <p className="text-[11px] text-white/60 truncate leading-snug mt-0.5">
+                                                            {cat.description || "Civilizational knowledge domain"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Category Star & Favorite Buttons */}
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleToggleCategoryStar(cat.id, e)}
+                                                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                                            cat.isStarred
+                                                                ? "bg-amber-500/20 border-amber-400 text-amber-400"
+                                                                : "bg-white/5 border-white/10 text-white/40 hover:text-amber-400"
+                                                        }`}
+                                                        title={cat.isStarred ? "Starred category (Click to unstar)" : "Star this category"}
+                                                    >
+                                                        <Star className={`w-3.5 h-3.5 ${cat.isStarred ? "fill-amber-400" : ""}`} />
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => handleToggleCategoryFavorite(cat.id, e)}
+                                                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                                                            cat.isFavorite
+                                                                ? "bg-rose-500/20 border-rose-400 text-rose-400"
+                                                                : "bg-white/5 border-white/10 text-white/40 hover:text-rose-400"
+                                                        }`}
+                                                        title={cat.isFavorite ? "Favorite category (Click to unfavorite)" : "Favorite this category"}
+                                                    >
+                                                        <Heart className={`w-3.5 h-3.5 ${cat.isFavorite ? "fill-rose-400" : ""}`} />
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            {/* Title & Subtitle */}
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-xs sm:text-sm font-bold tracking-wider uppercase text-white group-hover:text-[#E5A93C] transition-colors truncate">
-                                                    {cat.title}
-                                                </h3>
-                                                <p className="text-[11px] sm:text-xs text-white/60 truncate leading-snug mt-0.5">
-                                                    {cat.subtitle}
-                                                </p>
+                                            {/* Category Tags List + Add Tag Form */}
+                                            <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-2.5 border-t border-white/10">
+                                                {cat.tags && cat.tags.slice(0, 4).map((tag) => (
+                                                    <button
+                                                        key={tag}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActiveTag(activeTag === tag ? null : tag);
+                                                            setCurrentPage(1);
+                                                            scrollToFeed();
+                                                        }}
+                                                        className={`text-[10px] px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
+                                                            activeTag === tag
+                                                                ? "bg-[#E5A93C] text-slate-950 font-bold"
+                                                                : "bg-white/5 hover:bg-white/15 text-white/70 border border-white/10"
+                                                        }`}
+                                                        title={`Filter threads by #${tag}`}
+                                                    >
+                                                        #{tag}
+                                                    </button>
+                                                ))}
+
+                                                {/* Add Tag Inline Form */}
+                                                {addingTagCatId === cat.id ? (
+                                                    <form
+                                                        onSubmit={(e) => handleAddCategoryTag(cat.id, e)}
+                                                        className="flex items-center gap-1"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <input
+                                                            type="text"
+                                                            value={newTagInput}
+                                                            onChange={(e) => setNewTagInput(e.target.value)}
+                                                            placeholder="new-tag"
+                                                            autoFocus
+                                                            className="w-16 sm:w-20 px-1.5 py-0.5 text-[10px] bg-slate-950 border border-[#E5A93C] text-white rounded-xs focus:outline-none"
+                                                        />
+                                                        <button
+                                                            type="submit"
+                                                            className="text-[10px] bg-[#E5A93C] text-slate-950 px-1.5 py-0.5 rounded-xs font-bold cursor-pointer"
+                                                        >
+                                                            Add
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setAddingTagCatId(null);
+                                                            }}
+                                                            className="text-[10px] text-white/50 hover:text-white px-1 cursor-pointer"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </form>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setAddingTagCatId(cat.id);
+                                                            setNewTagInput("");
+                                                        }}
+                                                        className="text-[10px] text-[#E5A93C] hover:text-[#FBBF24] font-semibold flex items-center gap-0.5 px-1.5 py-0.5 rounded-xs bg-[#E5A93C]/10 border border-[#E5A93C]/20 hover:bg-[#E5A93C]/20 transition-colors cursor-pointer"
+                                                        title="Add a tag to this category for better search results"
+                                                    >
+                                                        <Plus className="w-2.5 h-2.5" />
+                                                        <span>Tag</span>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
                                         {/* Bottom Row: Count & Explore Action */}
                                         <div className="flex items-center justify-between pt-3 mt-3 border-t border-white/10 text-xs sm:text-[13px]">
                                             <span className="text-white/65 font-medium">
-                                                {cat.count}
+                                                {cat.count} {cat.count === 1 ? "Discussion" : "Discussions"}
                                             </span>
 
                                             <span className="text-[#E5A93C] font-semibold flex items-center gap-1.5 group-hover:translate-x-1.5 transition-transform">
-                                                <span>Explore</span>
+                                                <span>{isSelected ? "Filtered" : "Explore"}</span>
                                                 <ArrowRight className="w-3.5 h-3.5" />
                                             </span>
                                         </div>
@@ -591,52 +894,106 @@ export default function ForumHome({
 
                         {/* Sub-Filters for Discussions */}
                         {viewMode === "discussions" && (
-                            <div className="flex items-center gap-1">
-                                {(["latest", "trending", "pinned"] as const).map((tab) => (
+                            <>
+                                <div className="flex items-center gap-1">
+                                    {(["latest", "trending", "pinned"] as const).map((tab) => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => {
+                                                setDiscussionFilter(tab);
+                                                setCurrentPage(1);
+                                            }}
+                                            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${discussionFilter === tab
+                                                ? "bg-white/15 text-[#E5A93C] border border-[#E5A93C]/40"
+                                                : "text-white/60 hover:text-white hover:bg-white/5"
+                                                }`}
+                                        >
+                                            {tab === "trending" ? (
+                                                <>
+                                                    <TrendingUp className="w-3.5 h-3.5 inline mr-1 text-[#E5A93C]" />
+                                                    Trending
+                                                </>
+                                            ) : tab === "pinned" ? (
+                                                <>
+                                                    <Star className="w-3.5 h-3.5 inline mr-1 text-[#E5A93C]" />
+                                                    Pinned
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Clock className="w-3.5 h-3.5 inline mr-1 text-white/50" />
+                                                    Latest
+                                                </>
+                                            )}
+                                        </button>
+                                    ))}
+
                                     <button
-                                        key={tab}
-                                        onClick={() => setDiscussionFilter(tab)}
-                                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${discussionFilter === tab
+                                        onClick={() => {
+                                            if (!user) {
+                                                requireAuth(() => setDiscussionFilter("bookmarked"));
+                                            } else {
+                                                setDiscussionFilter("bookmarked");
+                                                setCurrentPage(1);
+                                            }
+                                        }}
+                                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${discussionFilter === "bookmarked"
                                             ? "bg-white/15 text-[#E5A93C] border border-[#E5A93C]/40"
                                             : "text-white/60 hover:text-white hover:bg-white/5"
                                             }`}
                                     >
-                                        {tab === "trending" ? (
-                                            <>
-                                                <TrendingUp className="w-3.5 h-3.5 inline mr-1 text-[#E5A93C]" />
-                                                Trending
-                                            </>
-                                        ) : tab === "pinned" ? (
-                                            <>
-                                                <Star className="w-3.5 h-3.5 inline mr-1 text-[#E5A93C]" />
-                                                Pinned
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Clock className="w-3.5 h-3.5 inline mr-1 text-white/50" />
-                                                Latest
-                                            </>
-                                        )}
+                                        <Bookmark className={`w-3.5 h-3.5 inline mr-1 ${discussionFilter === "bookmarked" ? "fill-[#E5A93C] text-[#E5A93C]" : ""}`} />
+                                        Bookmarked
                                     </button>
-                                ))}
+                                </div>
 
-                                <button
-                                    onClick={() => {
-                                        if (!user) {
-                                            requireAuth(() => setDiscussionFilter("bookmarked"));
-                                        } else {
-                                            setDiscussionFilter("bookmarked");
-                                        }
-                                    }}
-                                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${discussionFilter === "bookmarked"
-                                        ? "bg-white/15 text-[#E5A93C] border border-[#E5A93C]/40"
-                                        : "text-white/60 hover:text-white hover:bg-white/5"
-                                        }`}
-                                >
-                                    <Bookmark className={`w-3.5 h-3.5 inline mr-1 ${discussionFilter === "bookmarked" ? "fill-[#E5A93C] text-[#E5A93C]" : ""}`} />
-                                    Bookmarked
-                                </button>
-                            </div>
+                                {/* Forum Type Filters (Suggestions vs Questions vs Discussions) */}
+                                <div className="flex items-center gap-1 bg-[#0A1633] p-1 rounded-lg border border-white/10 ml-0 sm:ml-2">
+                                    <span className="text-[10px] text-white/40 uppercase font-bold px-1.5 flex items-center gap-1">
+                                        <Filter className="w-2.5 h-2.5" /> Type:
+                                    </span>
+                                    {[
+                                        { id: "all", label: "All" },
+                                        { id: "suggestion", label: "💡 Suggestions" },
+                                        { id: "question", label: "❓ Questions" },
+                                        { id: "discussion", label: "💬 Discussions" },
+                                    ].map((t) => (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveForumType(t.id as any);
+                                                setCurrentPage(1);
+                                            }}
+                                            className={`px-2 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                                                activeForumType === t.id
+                                                    ? "bg-[#E5A93C] text-slate-950 font-bold shadow-xs"
+                                                    : "text-white/70 hover:text-white hover:bg-white/5"
+                                            }`}
+                                        >
+                                            {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Active Tag Badge if tag is selected */}
+                                {activeTag && (
+                                    <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-500/15 border border-blue-400/40 text-blue-300 rounded-full text-xs">
+                                        <TagIcon className="w-3 h-3" />
+                                        <span>#{activeTag}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTag(null);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="ml-1 hover:text-white text-white/60 cursor-pointer"
+                                            title="Clear tag filter"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         {/* Sub-Filters for MegaThreads */}
@@ -699,7 +1056,7 @@ export default function ForumHome({
                                         </button>
                                     </div>
                                 ) : (
-                                    filteredDiscussions.map((d) => (
+                                    paginatedDiscussions.map((d) => (
                                         <DiscussionCard
                                             key={d.id}
                                             discussion={d}
@@ -824,6 +1181,32 @@ export default function ForumHome({
                     </div>
                 </div>
             </div>
+
+            {/* ============================================================== */}
+            {/* 4.5. FORUM BOTTOM BAR (Page Specifics, Numbers & Guide Hyperlink) */}
+            {/* ============================================================== */}
+            <ForumBottomBar
+                megaCategoryTitle={
+                    megaCategories.find((m) => m.id === activeMegaCategory)?.name ||
+                    (activeMegaCategory === "all" ? "All Categories" : "Content Gallery")
+                }
+                categoryTitle={
+                    activeCategory
+                        ? categories.find((c) => c.id === activeCategory)?.name || activeCategory
+                        : undefined
+                }
+                typeFilter={activeForumType !== "all" ? activeForumType : undefined}
+                tagFilter={activeTag || undefined}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={(p) => {
+                    setCurrentPage(p);
+                    scrollToFeed();
+                }}
+                onOpenHowToUse={onOpenHowToUse || (() => {})}
+            />
 
             {/* ============================================================== */}
             {/* 5. MINIMALIST FOOTER (Matching Forum.webp Bottom Bar)          */}

@@ -71,6 +71,18 @@ export default function DiscussionCard({
                     {categoryName}
                 </span>
 
+                {discussion.forumType === "suggestion" && (
+                    <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        💡 Suggestion
+                    </span>
+                )}
+
+                {discussion.forumType === "question" && (
+                    <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                        ❓ Question
+                    </span>
+                )}
+
                 {megaThreadTitle && (
                     <span className={`text-xs flex items-center gap-1 truncate max-w-[220px] ${dark ? "text-white/50" : "text-[#9E8F85]"}`}>
                         <Layers className="w-3 h-3 text-[#E5A93C]" /> {megaThreadTitle}

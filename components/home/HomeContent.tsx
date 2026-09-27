@@ -1,35 +1,39 @@
 import { AshokaCakra, LotusSmall, TricolorStripe } from "../Symbols";
 import HomeHero from "./HomeHero";
 import AwakeningSection from "./AwakeningSection";
+import HomeForumStartingSection from "./HomeForumStartingSection";
 import IdeasSection from "./IdeasSection";
 import LeadersSection from "./LeadersSection";
 import KnowledgeSection from "./KnowledgeSection";
-import ForumPreviewSection from "./ForumPreviewSection";
 
 interface HomeContentProps {
-    onViewForum: () => void;
+    onViewForum: (category?: string, megaCategory?: string) => void;
     onViewThread: (id: string) => void;
     onNewDiscussion: () => void;
+    onViewMegaThread?: (id: string) => void;
 }
 
 export default function HomeContent({
     onViewForum,
     onViewThread,
     onNewDiscussion,
+    onViewMegaThread,
 }: HomeContentProps) {
     return (
         <>
             <HomeHero onViewForum={onViewForum} />
             <TricolorStripe />
             <AwakeningSection />
-            <IdeasSection />
-            <LeadersSection />
-            <KnowledgeSection />
-            <ForumPreviewSection
+            <TricolorStripe />
+            <HomeForumStartingSection
                 onViewForum={onViewForum}
                 onViewThread={onViewThread}
                 onNewDiscussion={onNewDiscussion}
+                onViewMegaThread={onViewMegaThread}
             />
+            <IdeasSection />
+            <LeadersSection />
+            <KnowledgeSection />
 
             {/* About / CTA */}
             <section id="about" className="py-24 bg-[#0F1C3F] relative overflow-hidden">
@@ -55,7 +59,7 @@ export default function HomeContent({
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <button
-                            onClick={onViewForum}
+                            onClick={() => onViewForum()}
                             className="bg-[#B85428] hover:bg-[#A04820] text-white px-9 py-4 text-sm font-semibold tracking-wide transition-colors cursor-pointer"
                         >
                             Explore the Forum

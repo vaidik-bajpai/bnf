@@ -1,12 +1,27 @@
 import type { ReactNode } from "react";
 
+export type ForumType = "discussion" | "suggestion" | "question";
+
 export type PageState =
     | { view: "home" }
-    | { view: "forum" }
+    | { view: "forum"; category?: string; megaCategory?: string; type?: ForumType; tag?: string; page?: number }
     | { view: "megathreads" }
     | { view: "megathread"; id: string }
     | { view: "discussion"; id: string }
-    | { view: "thread"; id: string };
+    | { view: "thread"; id: string }
+    | { view: "how-to-use" }
+    | { view: "profile" }
+    | { view: "activity" }
+    | { view: "favorites" }
+    | { view: "starred" };
+
+export interface MegaCategory {
+    id: string;
+    name: string;
+    description: string;
+    categoryIds: string[];
+    icon?: ReactNode;
+}
 
 export interface Author {
     id?: string;
@@ -32,6 +47,11 @@ export interface ForumCategory {
     icon: ReactNode;
     count: number;
     color: string;
+    description?: string;
+    megaCategoryId?: string;
+    tags?: string[];
+    isStarred?: boolean;
+    isFavorite?: boolean;
 }
 
 export interface MegaThread {
@@ -83,6 +103,10 @@ export interface Discussion {
     shares?: number;
     isBookmarked?: boolean;
     bookmarkCount?: number;
+    forumType?: ForumType;
+    upvotes?: number;
+    downvotes?: number;
+    userVote?: "up" | "down" | null;
 }
 
 export interface Post {
@@ -98,6 +122,10 @@ export interface Post {
     isLiked?: boolean;
     likedBy?: Author[];
     isReported?: boolean;
+    isBookmarked?: boolean;
+    upvotes?: number;
+    downvotes?: number;
+    userVote?: "up" | "down" | null;
 }
 
 export type ReportReason =

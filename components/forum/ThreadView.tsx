@@ -17,6 +17,9 @@ import {
     Edit3,
     Trash2,
     Flag,
+    ArrowBigUp,
+    ArrowBigDown,
+    Quote,
 } from "lucide-react";
 import { TricolorStripe } from "../Symbols";
 import type { Discussion, Post } from "@/types/forum";
@@ -28,6 +31,9 @@ import {
     updatePost,
     deletePost,
     toggleBookmark,
+    voteDiscussionAction,
+    votePostAction,
+    togglePostBookmarkAction,
 } from "@/app/actions/forum";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -86,8 +92,9 @@ export default function ThreadView({
         itemAuthor?: string;
     } | null>(null);
 
-    // Replying state
+    // Replying and Quoting state
     const [replyingToPost, setReplyingToPost] = useState<Post | null>(null);
+    const [quotedText, setQuotedText] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Anchor highlight state
@@ -498,6 +505,93 @@ export default function ThreadView({
         setReportTarget(target);
     };
 
+    // Suggestion Forum: Vote on discussion (OP only)
+    const handleVoteDiscussion = async (type: "up" | "down") => {
+        if (!discussion) return;
+        if (!user) {
+            requireAuth(() => handleVoteDiscussion(type));
+            return;
+        }
+
+        try {
+            const res = await voteDiscussionAction(discussion.id, type === "up" ? "UP" : "DOWN", user.id);
+            setDiscussion((prev) =>
+                prev
+                    ? {
+                          ...prev,
+                          upvotes: res.upvotes,
+                          downvotes: res.downvotes,
+                          userVote: res.userVote,
+                      }
+                    : prev
+            );
+        } catch (err) {
+            console.error("Failed to vote discussion:", err);
+        }
+    };
+
+    // Question Forum: Vote on answer post
+    const handleVotePost = async (postId: string, type: "up" | "down") => {
+        if (!user) {
+            requireAuth(() => handleVotePost(postId, type));
+            return;
+        }
+
+        try {
+            const res = await votePostAction(postId, type === "up" ? "UP" : "DOWN", user.id);
+            setPosts((prev) =>
+                prev.map((p) => {
+                    if (p.id === postId) {
+                        return {
+                            ...p,
+                            upvotes: res.upvotes,
+                            downvotes: res.downvotes,
+                            userVote: res.userVote,
+                        };
+                    }
+                    return p;
+                })
+            );
+        } catch (err) {
+            console.error("Failed to vote post:", err);
+        }
+    };
+
+    // Toggle bookmark on individual comment/post
+    const handleTogglePostBookmark = async (postId: string) => {
+        if (!user) {
+            requireAuth(() => handleTogglePostBookmark(postId));
+            return;
+        }
+
+        try {
+            const res = await togglePostBookmarkAction(postId, user.id);
+            setPosts((prev) =>
+                prev.map((p) => {
+                    if (p.id === postId) {
+                        return {
+                            ...p,
+                            isBookmarked: res.bookmarked,
+                        };
+                    }
+                    return p;
+                })
+            );
+        } catch (err) {
+            console.error("Failed to toggle post bookmark:", err);
+        }
+    };
+
+    // Quote post handler (OP or replies)
+    const handleQuotePost = (targetPost: Post) => {
+        const authorHandle = targetPost.author?.username || targetPost.author?.name || "member";
+        const excerpt = targetPost.content.length > 140 ? targetPost.content.slice(0, 140) + "…" : targetPost.content;
+        setQuotedText(`@${authorHandle}: "${excerpt}"`);
+        setReplyingToPost(targetPost);
+        const composer = document.getElementById("reply-composer");
+        if (composer) composer.scrollIntoView({ behavior: "smooth" });
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#FAFAF7] flex items-center justify-center">
@@ -747,7 +841,36 @@ export default function ThreadView({
                                 )}
 
                                 {/* OP Action Strip with Like and Unlike */}
-                                <div className="flex items-center gap-5 pt-4 border-t border-[#EDE8DF] text-xs text-[#9E8F85]">
+                                <div className="flex flex-wrap items-center gap-4 sm:gap-5 pt-4 border-t border-[#EDE8DF] text-xs text-[#9E8F85]">
+                                    {/* Suggestion Forum: Upvote / Downvote buttons ONLY on the first post */}
+                                    {discussion.forumType === "suggestion" && (
+                                        <div className="flex items-center gap-1 bg-[#F5F2EB] px-2.5 py-1 rounded border border-[#E5DFD5]">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleVoteDiscussion("up")}
+                                                className={`p-1 rounded hover:bg-white transition-colors cursor-pointer ${
+                                                    discussion.userVote === "up" ? "text-emerald-700 font-bold" : "text-[#6B5B4E] hover:text-emerald-700"
+                                                }`}
+                                                title="Upvote suggestion"
+                                            >
+                                                <ArrowBigUp className={`w-5 h-5 ${discussion.userVote === "up" ? "fill-emerald-600" : ""}`} />
+                                            </button>
+                                            <span className="text-sm font-bold text-[#1C1917] px-1 min-w-[20px] text-center">
+                                                {(discussion.upvotes || 0) - (discussion.downvotes || 0)}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleVoteDiscussion("down")}
+                                                className={`p-1 rounded hover:bg-white transition-colors cursor-pointer ${
+                                                    discussion.userVote === "down" ? "text-rose-700 font-bold" : "text-[#6B5B4E] hover:text-rose-700"
+                                                }`}
+                                                title="Downvote suggestion"
+                                            >
+                                                <ArrowBigDown className={`w-5 h-5 ${discussion.userVote === "down" ? "fill-rose-600" : ""}`} />
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <button
                                         type="button"
                                         onClick={handleToggleDiscussionLike}
@@ -800,6 +923,17 @@ export default function ThreadView({
                                     >
                                         <MessageSquare className="w-4 h-4" />
                                         <span>Reply to OP</span>
+                                    </button>
+
+                                    {/* Quote OP */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleQuotePost(opPost)}
+                                        className="flex items-center gap-1.5 hover:text-[#B85428] transition-colors cursor-pointer text-[#9E8F85]"
+                                        title="Quote the opening post in your reply"
+                                    >
+                                        <Quote className="w-4 h-4" />
+                                        <span>Quote</span>
                                     </button>
 
                                     {/* Author actions: Edit and Delete Discussion */}
@@ -910,7 +1044,12 @@ export default function ThreadView({
                                     referencedPost={referenced}
                                     isHighlighted={highlightedPostId === replyPost.id}
                                     currentUserId={user?.id}
+                                    forumType={discussion.forumType}
                                     onReply={(p) => handleStartReply(p)}
+                                    onQuote={(p) => handleQuotePost(p)}
+                                    onVote={handleVotePost}
+                                    onBookmarkComment={handleTogglePostBookmark}
+                                    isBookmarked={replyPost.isBookmarked}
                                     onNavigateToPost={(targetId) => scrollToPost(targetId)}
                                     onLike={(id) => handleTogglePostLike(id)}
                                     onEdit={handleEditPost}
@@ -922,7 +1061,7 @@ export default function ThreadView({
                                             itemAuthor: p.author.name,
                                         })
                                     }
-                                    isLiked={likedSet.has(replyPost.id)}
+                                    isLiked={likedSet.has(replyPost.id) || Boolean(replyPost.isLiked)}
                                 />
                             );
                         })
@@ -934,7 +1073,9 @@ export default function ThreadView({
                 {/* ============================================================ */}
                 <ReplyComposer
                     replyingToPost={replyingToPost}
+                    quotedText={quotedText}
                     onCancelReplyReference={() => setReplyingToPost(null)}
+                    onClearQuote={() => setQuotedText(null)}
                     onSubmitReply={handleSubmitReply}
                     isSubmitting={isSubmitting}
                 />

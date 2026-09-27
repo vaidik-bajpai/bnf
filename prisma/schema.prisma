@@ -23,6 +23,11 @@ model User {
   discussionLikes DiscussionLike[]
   postLikes       PostLike[]
   bookmarks       Bookmark[]
+  postBookmarks   PostBookmark[]
+  discussionVotes DiscussionVote[]
+  postVotes       PostVote[]
+  categoryStars   CategoryStar[]
+  categoryFavorites CategoryFavorite[]
   reports         Report[]
   createdAt       DateTime         @default(now())
 }
@@ -63,12 +68,18 @@ model VerificationToken {
 }
 
 model Category {
-  id          String        @id
-  name        String
-  count       Int           @default(0)
-  color       String
-  megaThreads MegaThread[]
-  discussions Discussion[]
+  id             String             @id
+  name           String
+  count          Int                @default(0)
+  color          String
+  tags           String[]           @default([])
+  megaCategoryId String             @default("content-gallery")
+  isStarred      Boolean            @default(false)
+  isFavorite     Boolean            @default(false)
+  stars          CategoryStar[]
+  favorites      CategoryFavorite[]
+  megaThreads    MegaThread[]
+  discussions    Discussion[]
 }
 
 model MegaThread {
@@ -93,6 +104,9 @@ model Discussion {
   title           String
   excerpt         String
   body            String
+  forumType       String           @default("discussion") // "discussion" | "suggestion" | "question"
+  upvotes         Int              @default(0)
+  downvotes       Int              @default(0)
   megaThreadId    String?
   megaThread      MegaThread?      @relation(fields: [megaThreadId], references: [id], onDelete: SetNull)
   categoryId      String
@@ -111,6 +125,7 @@ model Discussion {
   pexelsUrl       String?
   posts           Post[]
   discussionLikes DiscussionLike[]
+  votes           DiscussionVote[]
   bookmarks       Bookmark[]
   reports         Report[]
   createdAt       DateTime         @default(now())
@@ -121,23 +136,28 @@ model Discussion {
   @@index([megaThreadId])
   @@index([authorId])
   @@index([createdAt])
+  @@index([forumType])
 }
 
 model Post {
-  id               String     @id @default(cuid())
+  id               String         @id @default(cuid())
   content          String
   discussionId     String
-  discussion       Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  discussion       Discussion     @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   authorId         String
-  author           User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author           User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   replyToPostId    String?
-  replyToPost      Post?      @relation("PostReferences", fields: [replyToPostId], references: [id], onDelete: SetNull)
-  referencingPosts Post[]     @relation("PostReferences")
-  likes            Int        @default(0)
+  replyToPost      Post?          @relation("PostReferences", fields: [replyToPostId], references: [id], onDelete: SetNull)
+  referencingPosts Post[]         @relation("PostReferences")
+  likes            Int            @default(0)
+  upvotes          Int            @default(0)
+  downvotes        Int            @default(0)
   postLikes        PostLike[]
+  votes            PostVote[]
+  bookmarks        PostBookmark[]
   reports          Report[]
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@index([discussionId])
   @@index([authorId])
@@ -204,4 +224,71 @@ model Report {
   @@index([postId])
   @@index([status])
   @@index([createdAt])
+}
+
+model DiscussionVote {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussionId String
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  type         String     // "UP" | "DOWN"
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, discussionId])
+  @@index([discussionId])
+  @@index([userId])
+}
+
+model PostVote {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type      String   // "UP" | "DOWN"
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model CategoryStar {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, categoryId])
+  @@index([categoryId])
+  @@index([userId])
+}
+
+model CategoryFavorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, categoryId])
+  @@index([categoryId])
+  @@index([userId])
 }

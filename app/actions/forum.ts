@@ -13,6 +13,17 @@ import {
     deleteMockDiscussion,
     updateMockPost,
     deleteMockPost,
+    toggleMockCommentBookmark,
+    toggleMockCategoryStar,
+    toggleMockCategoryFavorite,
+    addMockCategoryTag,
+    voteMockDiscussion,
+    voteMockPost,
+    getAllDiscussions,
+    getDiscussionById,
+    getPostsByDiscussionId,
+    forumCategories,
+    megaCategories,
 } from "@/data/forumData";
 
 // Helper to resolve an author ID (from session or default fallback scholar)
@@ -70,15 +81,25 @@ export async function getCategoriesAction() {
             orderBy: { id: "asc" },
         });
 
-        return dbCategories.map((c) => ({
-            id: c.id,
-            name: c.name,
-            count: c._count.discussions,
-            color: c.color,
-        }));
+        const dbMap = new Map(dbCategories.map((c) => [c.id, c]));
+
+        return forumCategories.map((fc) => {
+            const dbCat = dbMap.get(fc.id);
+            return {
+                id: fc.id,
+                name: fc.name,
+                description: fc.description,
+                count: dbCat ? dbCat._count.discussions : fc.count,
+                color: fc.color,
+                megaCategoryId: (dbCat as any)?.megaCategoryId || fc.megaCategoryId || "content-gallery",
+                tags: (dbCat as any)?.tags && (dbCat as any).tags.length > 0 ? (dbCat as any).tags : (fc.tags || []),
+                isStarred: (dbCat as any)?.isStarred ?? fc.isStarred ?? false,
+                isFavorite: (dbCat as any)?.isFavorite ?? fc.isFavorite ?? false,
+            };
+        });
     } catch (error) {
         console.error("[getCategoriesAction error]:", error);
-        return [];
+        return forumCategories;
     }
 }
 
@@ -274,6 +295,7 @@ export async function getDiscussions(params?: {
                 category: true,
                 megaThread: true,
                 bookmarks: clientUserId ? { select: { userId: true } } : false,
+                votes: clientUserId ? { select: { userId: true, type: true } } : false,
                 _count: { select: { posts: true, discussionLikes: true, bookmarks: true } },
             },
         });
@@ -305,6 +327,10 @@ export async function getDiscussions(params?: {
             shares: d.shares || 0,
             isBookmarked: Boolean(clientUserId && d.bookmarks && d.bookmarks.some((b) => b.userId === clientUserId)),
             bookmarkCount: d._count.bookmarks,
+            forumType: (d.forumType as any) || "discussion",
+            upvotes: d.upvotes || 0,
+            downvotes: d.downvotes || 0,
+            userVote: clientUserId && (d as any).votes?.length ? ((d as any).votes[0].type.toLowerCase() as "up" | "down") : null,
             lastActivity: d.lastActivity.toISOString(),
             createdAt: d.createdAt.toISOString(),
             updatedAt: d.updatedAt.toISOString(),
@@ -346,6 +372,9 @@ export async function getThreadById(id: string, clientUserId?: string) {
                 bookmarks: {
                     select: { userId: true },
                 },
+                votes: {
+                    select: { userId: true, type: true },
+                },
                 discussionLikes: {
                     include: {
                         user: {
@@ -366,6 +395,12 @@ export async function getThreadById(id: string, clientUserId?: string) {
                                 },
                             },
                         },
+                        votes: {
+                            select: { userId: true, type: true },
+                        },
+                        bookmarks: {
+                            select: { userId: true },
+                        },
                     },
                 },
             },
@@ -378,6 +413,9 @@ export async function getThreadById(id: string, clientUserId?: string) {
             const isDiscussionBookmarked = Boolean(
                 currentUserId && disc.bookmarks.some((b) => b.userId === currentUserId)
             );
+            const userVoteObj = currentUserId ? disc.votes.find((v) => v.userId === currentUserId) : null;
+            const userVote = userVoteObj ? (userVoteObj.type.toLowerCase() as "up" | "down") : null;
+
             const discussionLikedBy = disc.discussionLikes.map((dl) => ({
                 id: dl.user.id,
                 name: dl.user.name || "Scholar",
@@ -421,6 +459,10 @@ export async function getThreadById(id: string, clientUserId?: string) {
                 shares: disc.shares || 0,
                 isBookmarked: isDiscussionBookmarked,
                 bookmarkCount: disc.bookmarks.length,
+                forumType: (disc.forumType as any) || "discussion",
+                upvotes: disc.upvotes || 0,
+                downvotes: disc.downvotes || 0,
+                userVote,
                 tags: disc.tags,
                 createdAt: disc.createdAt.toISOString(),
                 updatedAt: disc.updatedAt.toISOString(),
@@ -437,6 +479,9 @@ export async function getThreadById(id: string, clientUserId?: string) {
                         bg: pl.user.bg || "#B85428",
                         image: pl.user.image || undefined,
                     }));
+                    const postVoteObj = currentUserId ? p.votes.find((v) => v.userId === currentUserId) : null;
+                    const postUserVote = postVoteObj ? (postVoteObj.type.toLowerCase() as "up" | "down") : null;
+                    const isPostBookmarked = Boolean(currentUserId && p.bookmarks.some((b) => b.userId === currentUserId));
 
                     return {
                         id: p.id,
@@ -448,6 +493,10 @@ export async function getThreadById(id: string, clientUserId?: string) {
                         likes: p.postLikes.length,
                         isLiked: isPostLiked,
                         likedBy: postLikedBy,
+                        upvotes: p.upvotes || 0,
+                        downvotes: p.downvotes || 0,
+                        userVote: postUserVote,
+                        isBookmarked: isPostBookmarked,
                         authorId: p.authorId,
                         author: {
                             id: p.author.id,
@@ -484,8 +533,9 @@ export async function createDiscussion(formData: {
     photographerUrl?: string;
     pexels_url?: string;
     pexelsUrl?: string;
+    forumType?: "discussion" | "suggestion" | "question";
 }) {
-    const { title, excerpt, body, megaThreadId, categoryId, tags, authorId } = formData;
+    const { title, excerpt, body, megaThreadId, categoryId, tags, authorId, forumType } = formData;
     const effectiveExcerpt = excerpt || (body.length > 160 ? body.slice(0, 160) + "..." : body);
 
     const effectiveImageUrl = formData.imageUrl || formData.image_url || null;
@@ -554,6 +604,7 @@ export async function createDiscussion(formData: {
                 title,
                 excerpt: effectiveExcerpt,
                 body,
+                forumType: forumType || "discussion",
                 megaThreadId: validMegaThreadId,
                 categoryId: validCategoryId,
                 tags: effectiveTags,
@@ -1380,5 +1431,318 @@ export async function recordShare(discussionId: string): Promise<{ success: bool
     } catch (error) {
         console.error("[recordShare error]:", error);
         throw error;
+    }
+}
+
+/**
+ * Vote on a Discussion (Suggestion forum: OP voting).
+ */
+export async function voteDiscussionAction(
+    discussionId: string,
+    voteType: "UP" | "DOWN",
+    clientUserId?: string
+): Promise<{ upvotes: number; downvotes: number; userVote: "up" | "down" | null }> {
+    try {
+        const userId = await getEffectiveUserId(clientUserId);
+        const existingVote = await prisma.discussionVote.findUnique({
+            where: {
+                userId_discussionId: { userId, discussionId },
+            },
+        });
+
+        if (existingVote) {
+            if (existingVote.type === voteType) {
+                // Toggle off
+                await prisma.discussionVote.delete({
+                    where: { id: existingVote.id },
+                });
+                const fieldToDec = voteType === "UP" ? "upvotes" : "downvotes";
+                const updated = await prisma.discussion.update({
+                    where: { id: discussionId },
+                    data: { [fieldToDec]: { decrement: 1 } },
+                    select: { upvotes: true, downvotes: true },
+                });
+                safeRevalidate("/");
+                return {
+                    upvotes: Math.max(0, updated.upvotes),
+                    downvotes: Math.max(0, updated.downvotes),
+                    userVote: null,
+                };
+            } else {
+                // Switch vote
+                await prisma.discussionVote.update({
+                    where: { id: existingVote.id },
+                    data: { type: voteType },
+                });
+                const incField = voteType === "UP" ? "upvotes" : "downvotes";
+                const decField = voteType === "UP" ? "downvotes" : "upvotes";
+                const updated = await prisma.discussion.update({
+                    where: { id: discussionId },
+                    data: {
+                        [incField]: { increment: 1 },
+                        [decField]: { decrement: 1 },
+                    },
+                    select: { upvotes: true, downvotes: true },
+                });
+                safeRevalidate("/");
+                return {
+                    upvotes: Math.max(0, updated.upvotes),
+                    downvotes: Math.max(0, updated.downvotes),
+                    userVote: voteType.toLowerCase() as "up" | "down",
+                };
+            }
+        } else {
+            // New vote
+            await prisma.discussionVote.create({
+                data: { userId, discussionId, type: voteType },
+            });
+            const fieldToInc = voteType === "UP" ? "upvotes" : "downvotes";
+            const updated = await prisma.discussion.update({
+                where: { id: discussionId },
+                data: { [fieldToInc]: { increment: 1 } },
+                select: { upvotes: true, downvotes: true },
+            });
+            safeRevalidate("/");
+            return {
+                upvotes: Math.max(0, updated.upvotes),
+                downvotes: Math.max(0, updated.downvotes),
+                userVote: voteType.toLowerCase() as "up" | "down",
+            };
+        }
+    } catch (error) {
+        console.error("[voteDiscussionAction error, falling back to mock]:", error);
+        return voteMockDiscussion(discussionId, voteType.toLowerCase() as "up" | "down");
+    }
+}
+
+/**
+ * Vote on a Post (Question forum: answer voting on every post except OP).
+ */
+export async function votePostAction(
+    postId: string,
+    voteType: "UP" | "DOWN",
+    clientUserId?: string
+): Promise<{ upvotes: number; downvotes: number; userVote: "up" | "down" | null }> {
+    try {
+        const userId = await getEffectiveUserId(clientUserId);
+        const existingVote = await prisma.postVote.findUnique({
+            where: {
+                userId_postId: { userId, postId },
+            },
+        });
+
+        if (existingVote) {
+            if (existingVote.type === voteType) {
+                // Toggle off
+                await prisma.postVote.delete({
+                    where: { id: existingVote.id },
+                });
+                const fieldToDec = voteType === "UP" ? "upvotes" : "downvotes";
+                const updated = await prisma.post.update({
+                    where: { id: postId },
+                    data: { [fieldToDec]: { decrement: 1 } },
+                    select: { upvotes: true, downvotes: true },
+                });
+                safeRevalidate("/");
+                return {
+                    upvotes: Math.max(0, updated.upvotes),
+                    downvotes: Math.max(0, updated.downvotes),
+                    userVote: null,
+                };
+            } else {
+                // Switch vote
+                await prisma.postVote.update({
+                    where: { id: existingVote.id },
+                    data: { type: voteType },
+                });
+                const incField = voteType === "UP" ? "upvotes" : "downvotes";
+                const decField = voteType === "UP" ? "downvotes" : "upvotes";
+                const updated = await prisma.post.update({
+                    where: { id: postId },
+                    data: {
+                        [incField]: { increment: 1 },
+                        [decField]: { decrement: 1 },
+                    },
+                    select: { upvotes: true, downvotes: true },
+                });
+                safeRevalidate("/");
+                return {
+                    upvotes: Math.max(0, updated.upvotes),
+                    downvotes: Math.max(0, updated.downvotes),
+                    userVote: voteType.toLowerCase() as "up" | "down",
+                };
+            }
+        } else {
+            // New vote
+            await prisma.postVote.create({
+                data: { userId, postId, type: voteType },
+            });
+            const fieldToInc = voteType === "UP" ? "upvotes" : "downvotes";
+            const updated = await prisma.post.update({
+                where: { id: postId },
+                data: { [fieldToInc]: { increment: 1 } },
+                select: { upvotes: true, downvotes: true },
+            });
+            safeRevalidate("/");
+            return {
+                upvotes: Math.max(0, updated.upvotes),
+                downvotes: Math.max(0, updated.downvotes),
+                userVote: voteType.toLowerCase() as "up" | "down",
+            };
+        }
+    } catch (error) {
+        console.error("[votePostAction error, falling back to mock]:", error);
+        return voteMockPost(postId, voteType.toLowerCase() as "up" | "down");
+    }
+}
+
+/**
+ * Toggle bookmark on an individual post / comment.
+ */
+export async function togglePostBookmarkAction(
+    postId: string,
+    clientUserId?: string
+): Promise<{ bookmarked: boolean }> {
+    try {
+        const userId = await getEffectiveUserId(clientUserId);
+        const existing = await prisma.postBookmark.findUnique({
+            where: {
+                userId_postId: { userId, postId },
+            },
+        });
+
+        if (existing) {
+            await prisma.postBookmark.delete({
+                where: { id: existing.id },
+            });
+            safeRevalidate("/");
+            return { bookmarked: false };
+        } else {
+            await prisma.postBookmark.create({
+                data: { userId, postId },
+            });
+            safeRevalidate("/");
+            return { bookmarked: true };
+        }
+    } catch (error) {
+        console.error("[togglePostBookmarkAction error, falling back to mock]:", error);
+        return toggleMockCommentBookmark(postId);
+    }
+}
+
+/**
+ * Star / unstar a Category.
+ */
+export async function toggleCategoryStarAction(
+    categoryId: string,
+    clientUserId?: string
+): Promise<{ isStarred: boolean }> {
+    try {
+        const userId = await getEffectiveUserId(clientUserId);
+        const existing = await prisma.categoryStar.findUnique({
+            where: {
+                userId_categoryId: { userId, categoryId },
+            },
+        });
+
+        if (existing) {
+            await prisma.categoryStar.delete({ where: { id: existing.id } });
+            await prisma.category.update({
+                where: { id: categoryId },
+                data: { isStarred: false },
+            }).catch(() => {});
+            safeRevalidate("/");
+            return { isStarred: false };
+        } else {
+            await prisma.category.upsert({
+                where: { id: categoryId },
+                update: { isStarred: true },
+                create: { id: categoryId, name: categoryId, color: "#B85428", isStarred: true },
+            });
+            await prisma.categoryStar.create({
+                data: { userId, categoryId },
+            });
+            safeRevalidate("/");
+            return { isStarred: true };
+        }
+    } catch (error) {
+        console.error("[toggleCategoryStarAction error, falling back to mock]:", error);
+        return { isStarred: toggleMockCategoryStar(categoryId) };
+    }
+}
+
+/**
+ * Favorite / unfavorite a Category.
+ */
+export async function toggleCategoryFavoriteAction(
+    categoryId: string,
+    clientUserId?: string
+): Promise<{ isFavorite: boolean }> {
+    try {
+        const userId = await getEffectiveUserId(clientUserId);
+        const existing = await prisma.categoryFavorite.findUnique({
+            where: {
+                userId_categoryId: { userId, categoryId },
+            },
+        });
+
+        if (existing) {
+            await prisma.categoryFavorite.delete({ where: { id: existing.id } });
+            await prisma.category.update({
+                where: { id: categoryId },
+                data: { isFavorite: false },
+            }).catch(() => {});
+            safeRevalidate("/");
+            return { isFavorite: false };
+        } else {
+            await prisma.category.upsert({
+                where: { id: categoryId },
+                update: { isFavorite: true },
+                create: { id: categoryId, name: categoryId, color: "#B85428", isFavorite: true },
+            });
+            await prisma.categoryFavorite.create({
+                data: { userId, categoryId },
+            });
+            safeRevalidate("/");
+            return { isFavorite: true };
+        }
+    } catch (error) {
+        console.error("[toggleCategoryFavoriteAction error, falling back to mock]:", error);
+        return { isFavorite: toggleMockCategoryFavorite(categoryId) };
+    }
+}
+
+/**
+ * Add a tag to a category for better search results.
+ */
+export async function addCategoryTagAction(
+    categoryId: string,
+    tag: string
+): Promise<{ tags: string[] }> {
+    const cleanTag = tag.trim().toLowerCase().replace(/^#/, "");
+    if (!cleanTag) return { tags: [] };
+
+    try {
+        const cat = await prisma.category.findUnique({
+            where: { id: categoryId },
+            select: { tags: true },
+        });
+
+        const currentTags = cat?.tags || [];
+        if (!currentTags.includes(cleanTag)) {
+            const updatedTags = [...currentTags, cleanTag];
+            const updated = await prisma.category.upsert({
+                where: { id: categoryId },
+                update: { tags: updatedTags },
+                create: { id: categoryId, name: categoryId, color: "#B85428", tags: updatedTags },
+                select: { tags: true },
+            });
+            safeRevalidate("/");
+            return { tags: updated.tags };
+        }
+        return { tags: currentTags };
+    } catch (error) {
+        console.error("[addCategoryTagAction error, falling back to mock]:", error);
+        return { tags: addMockCategoryTag(categoryId, cleanTag) };
     }
 }

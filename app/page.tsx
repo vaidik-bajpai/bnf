@@ -4,9 +4,13 @@ import { useState, useEffect } from "react";
 import type { PageState } from "@/types/forum";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
+import ForumNavbar from "@/components/forum/ForumNavbar";
 import Footer from "@/components/Footer";
 import NewDiscussionModal from "@/components/modals/NewDiscussionModal";
 import AuthModal from "@/components/modals/AuthModal";
+import SearchModal from "@/components/modals/SearchModal";
+import ActivityModal from "@/components/modals/ActivityModal";
+import HowToUseModal from "@/components/modals/HowToUseModal";
 import HomeContent from "@/components/home/HomeContent";
 import ForumHome from "@/components/forum/ForumHome";
 import MegaThreadPage from "@/components/forum/MegaThreadPage";
@@ -47,6 +51,14 @@ function pageStateToPath(state: PageState): string {
         case "discussion":
         case "thread":
             return `/forum/discussions/${state.id}`;
+        case "how-to-use":
+        case "profile":
+        case "activity":
+        case "favorites":
+        case "starred":
+            return "/forum";
+        default:
+            return "/";
     }
 }
 
@@ -59,8 +71,18 @@ function ForumApp() {
         }
         return { view: "home" };
     });
+
+    // History stack management for forum Back and Forward buttons
+    const [historyStack, setHistoryStack] = useState<PageState[]>([pageState]);
+    const [historyIndex, setHistoryIndex] = useState<number>(0);
+
+    // Modal states
     const [showNewDiscussion, setShowNewDiscussion] = useState(false);
     const [targetMegaThreadId, setTargetMegaThreadId] = useState<string | undefined>(undefined);
+    const [showSearchModal, setShowSearchModal] = useState(false);
+    const [showActivityModal, setShowActivityModal] = useState(false);
+    const [activityTab, setActivityTab] = useState<"activity" | "favorites" | "starred" | "bookmarks">("activity");
+    const [showHowToUseModal, setShowHowToUseModal] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     // Handle browser Back/Forward navigation
@@ -78,9 +100,46 @@ function ForumApp() {
         setPageState(state);
         window.scrollTo({ top: 0 });
 
-        if (pushHistory && typeof window !== "undefined") {
-            const newPath = pageStateToPath(state);
-            if (window.location.pathname !== newPath) {
+        if (pushHistory) {
+            setHistoryStack((prev) => [...prev.slice(0, historyIndex + 1), state]);
+            setHistoryIndex((prev) => prev + 1);
+
+            if (typeof window !== "undefined") {
+                const newPath = pageStateToPath(state);
+                if (window.location.pathname !== newPath) {
+                    window.history.pushState(null, "", newPath);
+                }
+            }
+        }
+    };
+
+    const handleGoBack = () => {
+        if (historyIndex > 0) {
+            const prevIdx = historyIndex - 1;
+            const prevState = historyStack[prevIdx];
+            setHistoryIndex(prevIdx);
+            setPageState(prevState);
+            window.scrollTo({ top: 0 });
+            if (typeof window !== "undefined") {
+                const newPath = pageStateToPath(prevState);
+                window.history.pushState(null, "", newPath);
+            }
+        } else if (pageState.view !== "forum" && pageState.view !== "home") {
+            navigateTo({ view: "forum" });
+        } else if (pageState.view === "forum") {
+            navigateTo({ view: "home" });
+        }
+    };
+
+    const handleGoForward = () => {
+        if (historyIndex < historyStack.length - 1) {
+            const nextIdx = historyIndex + 1;
+            const nextState = historyStack[nextIdx];
+            setHistoryIndex(nextIdx);
+            setPageState(nextState);
+            window.scrollTo({ top: 0 });
+            if (typeof window !== "undefined") {
+                const newPath = pageStateToPath(nextState);
                 window.history.pushState(null, "", newPath);
             }
         }
@@ -95,68 +154,92 @@ function ForumApp() {
         }
     };
 
-    // Determine active page state (authenticated users never see the landing page)
-    const activePageState: PageState =
-        user && pageState.view === "home" ? { view: "forum" } : pageState;
-
-    // Sync browser URL when authenticated user is on root path
-    useEffect(() => {
-        if (user && pageState.view === "home" && typeof window !== "undefined") {
-            if (window.location.pathname === "/") {
-                window.history.replaceState(null, "", "/forum");
-            }
-        }
-    }, [user, pageState.view]);
+    const handleOpenActivity = (tab?: "activity" | "favorites" | "starred" | "bookmarks") => {
+        if (tab) setActivityTab(tab);
+        setShowActivityModal(true);
+    };
 
     return (
         <div className="min-h-screen bg-[#FAFAF7]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            <Navbar
-                pageState={activePageState}
-                onNavigate={navigateTo}
-                onScrollToSection={(id) => {
-                    if (activePageState.view !== "home") navigateTo({ view: "home" });
-                    setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100);
-                }}
-                onOpenNewDiscussion={() => handleOpenDiscussion()}
-            />
-
-            {activePageState.view === "home" && (
-                <HomeContent
-                    onViewForum={() => navigateTo({ view: "forum" })}
-                    onViewThread={(id) => navigateTo({ view: "discussion", id })}
-                    onNewDiscussion={() => handleOpenDiscussion()}
+            {/* Header: original Navbar for Home, ForumNavbar for Forum */}
+            {pageState.view === "home" ? (
+                <Navbar
+                    pageState={pageState}
+                    onNavigate={navigateTo}
+                    onScrollToSection={(id) => {
+                        if (pageState.view !== "home") navigateTo({ view: "home" });
+                        setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100);
+                    }}
+                    onOpenNewDiscussion={() => handleOpenDiscussion()}
+                />
+            ) : (
+                <ForumNavbar
+                    onNavigate={navigateTo}
+                    canGoBack={historyIndex > 0 || pageState.view !== "forum"}
+                    canGoForward={historyIndex < historyStack.length - 1}
+                    onGoBack={handleGoBack}
+                    onGoForward={handleGoForward}
+                    onOpenSearch={() => setShowSearchModal(true)}
+                    onOpenHowToUse={() => setShowHowToUseModal(true)}
+                    onOpenActivity={handleOpenActivity}
+                    onOpenNewDiscussion={() => handleOpenDiscussion()}
                 />
             )}
 
-            {(activePageState.view === "forum" || activePageState.view === "megathreads") && (
+            {/* Landing Page Content */}
+            {pageState.view === "home" && (
+                <>
+                    <HomeContent
+                        onViewForum={(cat, mega) => {
+                            if (cat || mega) {
+                                navigateTo({ view: "forum", category: cat, megaCategory: mega });
+                            } else {
+                                navigateTo({ view: "forum" });
+                            }
+                        }}
+                        onViewThread={(id) => navigateTo({ view: "discussion", id })}
+                        onViewMegaThread={(id) => navigateTo({ view: "megathread", id })}
+                        onNewDiscussion={() => handleOpenDiscussion()}
+                    />
+                    <Footer />
+                </>
+            )}
+
+            {/* Forum Home Stream & Mega Categories */}
+            {(pageState.view === "forum" || pageState.view === "megathreads") && (
                 <ForumHome
-                    key={refreshKey}
+                    key={`${refreshKey}-${pageState.view === "forum" ? pageState.category || "" : ""}-${pageState.view === "forum" ? pageState.megaCategory || "" : ""}`}
+                    initialCategory={pageState.view === "forum" ? pageState.category : undefined}
+                    initialMegaCategory={pageState.view === "forum" ? pageState.megaCategory : undefined}
+                    initialTag={pageState.view === "forum" ? pageState.tag : undefined}
                     onViewThread={(id) => navigateTo({ view: "discussion", id })}
                     onViewMegaThread={(id) => navigateTo({ view: "megathread", id })}
                     onNewDiscussion={() => handleOpenDiscussion()}
+                    onOpenHowToUse={() => setShowHowToUseModal(true)}
                 />
             )}
 
-            {activePageState.view === "megathread" && (
+            {/* Individual MegaThread View */}
+            {pageState.view === "megathread" && (
                 <MegaThreadPage
-                    megaThreadId={activePageState.id}
-                    onBack={() => navigateTo({ view: "forum" })}
+                    megaThreadId={pageState.id}
+                    onBack={handleGoBack}
                     onViewDiscussion={(id) => navigateTo({ view: "discussion", id })}
                     onNewDiscussion={(mtId) => handleOpenDiscussion(mtId)}
                     onViewMegaThread={(id) => navigateTo({ view: "megathread", id })}
                 />
             )}
 
-            {(activePageState.view === "discussion" || activePageState.view === "thread") && (
+            {/* Discussion / Thread Detail View */}
+            {(pageState.view === "discussion" || pageState.view === "thread") && (
                 <ThreadView
-                    threadId={activePageState.id}
-                    onBack={() => navigateTo({ view: "forum" })}
+                    threadId={pageState.id}
+                    onBack={handleGoBack}
                     onViewMegaThread={(id) => navigateTo({ view: "megathread", id })}
                 />
             )}
 
-            <Footer />
-
+            {/* Modals */}
             <NewDiscussionModal
                 isOpen={showNewDiscussion}
                 defaultMegaThreadId={targetMegaThreadId}
@@ -172,6 +255,38 @@ function ForumApp() {
                         navigateTo({ view: "forum" });
                     }
                 }}
+            />
+
+            <SearchModal
+                isOpen={showSearchModal}
+                onClose={() => setShowSearchModal(false)}
+                onSelectThread={(id) => {
+                    setShowSearchModal(false);
+                    navigateTo({ view: "discussion", id });
+                }}
+                onSelectCategory={() => {
+                    setShowSearchModal(false);
+                    navigateTo({ view: "forum" });
+                }}
+            />
+
+            <ActivityModal
+                isOpen={showActivityModal}
+                initialTab={activityTab}
+                onClose={() => setShowActivityModal(false)}
+                onSelectThread={(id) => {
+                    setShowActivityModal(false);
+                    navigateTo({ view: "discussion", id });
+                }}
+                onSelectCategory={() => {
+                    setShowActivityModal(false);
+                    navigateTo({ view: "forum" });
+                }}
+            />
+
+            <HowToUseModal
+                isOpen={showHowToUseModal}
+                onClose={() => setShowHowToUseModal(false)}
             />
 
             <AuthModal />

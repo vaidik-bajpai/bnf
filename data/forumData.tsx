@@ -7,11 +7,18 @@ import {
     Globe,
     Users,
     Shield,
-    Star
+    Star,
+    Video,
+    Camera,
+    MessageSquare,
+    Film,
+    Heart,
 } from "lucide-react";
 import type {
     Leader,
     ForumCategory,
+    MegaCategory,
+    ForumType,
     Discussion,
     ReplyData,
     KnowledgeSystem,
@@ -121,14 +128,159 @@ export const leaders: Leader[] = [
 ];
 
 export const forumCategories: ForumCategory[] = [
-    { id: "history", name: "Indian History", icon: <Compass className="w-5 h-5" />, count: 847, color: "#B85428" },
-    { id: "philosophy", name: "Indic Philosophy", icon: <Lightbulb className="w-5 h-5" />, count: 523, color: "#0F1C3F" },
-    { id: "culture", name: "Culture & Heritage", icon: <Award className="w-5 h-5" />, count: 634, color: "#C8971A" },
-    { id: "literature", name: "Literature & Languages", icon: <BookOpen className="w-5 h-5" />, count: 412, color: "#2D6A4F" },
-    { id: "science", name: "Science & Knowledge", icon: <Zap className="w-5 h-5" />, count: 389, color: "#1D3557" },
-    { id: "art", name: "Art & Architecture", icon: <Globe className="w-5 h-5" />, count: 298, color: "#6B3A2A" },
-    { id: "society", name: "Society & Civilization", icon: <Users className="w-5 h-5" />, count: 567, color: "#4A4A8A" },
-    { id: "development", name: "National Development", icon: <Shield className="w-5 h-5" />, count: 723, color: "#2B7A0B" },
+    {
+        id: "videos",
+        name: "Videos",
+        description: "Curated civilizational lectures, audio-visual archives, debates, and visual masterclasses.",
+        icon: <Video className="w-5 h-5" />,
+        count: 142,
+        color: "#E63946",
+        megaCategoryId: "content-gallery",
+        tags: ["lectures", "documentary", "multimedia", "archaeology", "debates", "visual"],
+        isStarred: true,
+        isFavorite: true,
+    },
+    {
+        id: "vlogs",
+        name: "Vlogs",
+        description: "Fieldwork expeditions, heritage walks, temple trails, and on-site architectural explorations.",
+        icon: <Camera className="w-5 h-5" />,
+        count: 98,
+        color: "#8338EC",
+        megaCategoryId: "content-gallery",
+        tags: ["fieldwork", "temple-walks", "expeditions", "hampi", "monuments", "travelogue"],
+        isStarred: true,
+        isFavorite: false,
+    },
+    {
+        id: "community-posts",
+        name: "Community Posts",
+        description: "Community proposals, suggestions, inquiries, townhall polls, and civic dispatches.",
+        icon: <MessageSquare className="w-5 h-5" />,
+        count: 215,
+        color: "#3A86FF",
+        megaCategoryId: "content-gallery",
+        tags: ["civic", "polls", "suggestions", "questions", "announcements", "open-discourse"],
+        isStarred: false,
+        isFavorite: true,
+    },
+    {
+        id: "history",
+        name: "Indian History",
+        description: "Saraswati-Sindhu continuity, classical empires, maritime networks, and historiography.",
+        icon: <Compass className="w-5 h-5" />,
+        count: 847,
+        color: "#B85428",
+        megaCategoryId: "civilizational-hub",
+        tags: ["saraswati", "nalanda", "maritime", "empires", "chronology"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "philosophy",
+        name: "Indic Philosophy",
+        description: "Six Darshanas, Nyaya formal debate, Vedanta, Mimamsa epistemology, and Buddhist-Jain logic.",
+        icon: <Lightbulb className="w-5 h-5" />,
+        count: 523,
+        color: "#0F1C3F",
+        megaCategoryId: "civilizational-hub",
+        tags: ["darshanas", "nyaya", "vedanta", "epistemology", "pramanas"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "culture",
+        name: "Culture & Heritage",
+        description: "Living traditions, temple rites, classical arts, folk lore, and civilizational memory.",
+        icon: <Award className="w-5 h-5" />,
+        count: 634,
+        color: "#C8971A",
+        megaCategoryId: "civilizational-hub",
+        tags: ["rituals", "temples", "sacred-geography", "folklore", "tradition"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "literature",
+        name: "Literature & Languages",
+        description: "Paninian generative linguistics, Sanskrit kavya, Tamil Sangam verses, and Bhakti poets.",
+        icon: <BookOpen className="w-5 h-5" />,
+        count: 412,
+        color: "#2D6A4F",
+        megaCategoryId: "civilizational-hub",
+        tags: ["sanskrit", "panini", "sangam", "bhakti", "linguistics"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "science",
+        name: "Science & Knowledge",
+        description: "Kerala School calculus, Aryabhata astronomy, Ayurveda, metallurgy, and ISRO innovations.",
+        icon: <Zap className="w-5 h-5" />,
+        count: 389,
+        color: "#1D3557",
+        megaCategoryId: "civilizational-hub",
+        tags: ["astronomy", "mathematics", "kerala-school", "ayurveda", "metallurgy", "isro"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "art",
+        name: "Art & Architecture",
+        description: "Sacred mandala geometry, Dravidian vimanas, Nagara shikhara, subterranean stepwells.",
+        icon: <Globe className="w-5 h-5" />,
+        count: 298,
+        color: "#6B3A2A",
+        megaCategoryId: "civilizational-hub",
+        tags: ["temple-architecture", "mandala", "stepwells", "ellora", "sculpture"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "society",
+        name: "Society & Civilization",
+        description: "Civic ethics, community resilience, family structures, and civilizational ethos.",
+        icon: <Users className="w-5 h-5" />,
+        count: 567,
+        color: "#4A4A8A",
+        megaCategoryId: "national-renewal",
+        tags: ["civic-ethics", "social-order", "dharma", "community"],
+        isStarred: false,
+        isFavorite: false,
+    },
+    {
+        id: "development",
+        name: "National Development",
+        description: "Arthashastra statecraft, constitutional evolution, defense autonomy, and futuristic infrastructure.",
+        icon: <Shield className="w-5 h-5" />,
+        count: 723,
+        color: "#2B7A0B",
+        megaCategoryId: "national-renewal",
+        tags: ["arthashastra", "constitution", "governance", "sovereignty", "development"],
+        isStarred: false,
+        isFavorite: false,
+    },
+];
+
+export const megaCategories: MegaCategory[] = [
+    {
+        id: "content-gallery",
+        name: "Content Gallery",
+        description: "Multimedia and civic archives: videos, vlogs, and community posts.",
+        categoryIds: ["videos", "vlogs", "community-posts"],
+    },
+    {
+        id: "civilizational-hub",
+        name: "Civilizational Hub",
+        description: "History, Philosophy, Heritage, Literature, Sciences & Classical Arts.",
+        categoryIds: ["history", "philosophy", "culture", "literature", "science", "art"],
+    },
+    {
+        id: "national-renewal",
+        name: "National Renewal",
+        description: "Statecraft, civic architecture, public discourse, and defense sovereignty.",
+        categoryIds: ["society", "development"],
+    },
 ];
 
 export const megaThreads: MegaThread[] = [
@@ -430,6 +582,64 @@ export const discussions: Discussion[] = [
         createdAt: "2026-09-09T14:00:00.000Z",
         updatedAt: "2026-09-13T03:00:00.000Z",
         tags: ["sushruta", "surgery", "medicine", "ayurveda"],
+    },
+    {
+        id: "sug-1",
+        title: "Proposal: Establishing open-access digital repositories for palm-leaf manuscripts",
+        excerpt: "An actionable proposal to coordinate mathas, university archives, and AI OCR teams to digitize five million uncatalogued Indic manuscripts.",
+        body: "Millions of critical manuscripts on mathematics, hydrology, metallurgy, and philosophy are deteriorating in regional archives. We propose establishing a centralized National Manuscript Scanning Mission with decentralized matha partnerships, utilizing open-source multimodal OCR models fine-tuned on Grantha, Sharada, and Tigalari scripts.",
+        author: { name: "Arjun Sharma", username: "arjun_s", initials: "AS", bg: "#B85428" },
+        category: "community-posts",
+        categoryLabel: "Community Posts",
+        forumType: "suggestion",
+        upvotes: 84,
+        downvotes: 3,
+        replies: 4,
+        replyCount: 4,
+        views: 1820,
+        viewCount: 1820,
+        lastActivity: "15 mins ago",
+        createdAt: "2026-09-24T12:00:00.000Z",
+        updatedAt: "2026-09-27T10:00:00.000Z",
+        tags: ["manuscripts", "digital-archive", "suggestion", "preservation"],
+    },
+    {
+        id: "q-1",
+        title: "What are the earliest recorded proofs of the Pythagorean theorem in the Shulba Sutras?",
+        excerpt: "Inquiry into Baudhayana and Apastamba formulations of geometry preceding classical Greek trigonometry.",
+        body: "Baudhayana's Shulba Sutra states: 'The diagonal of a rectangle produces by itself both the areas which the length and breadth produce separately.' What were the geometric and ritual construction contexts in which the Sulbakaras discovered and verified these proportions?",
+        author: { name: "Ananya Iyer", username: "ananya_i", initials: "AI", bg: "#1D3557" },
+        category: "videos",
+        categoryLabel: "Videos",
+        forumType: "question",
+        upvotes: 45,
+        downvotes: 1,
+        replies: 3,
+        replyCount: 3,
+        views: 2310,
+        viewCount: 2310,
+        lastActivity: "1 hour ago",
+        createdAt: "2026-09-25T14:30:00.000Z",
+        updatedAt: "2026-09-27T08:15:00.000Z",
+        tags: ["mathematics", "shulba-sutras", "geometry", "baudhayana", "question"],
+    },
+    {
+        id: "vlog-1",
+        title: "Fieldwork Dispatch: Exploring the subterranean stepped wells of Patan and Bundi",
+        excerpt: "Visual expedition documentation analyzing hydrological engineering and sacred mandala aesthetics in Rani ki Vav.",
+        body: "Stepwells were not just water-harvesting cisterns but inverted subterranean temples honoring Saraswati. This vlog captures architectural survey notes on water tables, silt filtration chambers, and sculptural friezes.",
+        author: { name: "Rohan Varma", username: "rohan_v", initials: "RV", bg: "#8338EC" },
+        category: "vlogs",
+        categoryLabel: "Vlogs",
+        forumType: "discussion",
+        replies: 2,
+        replyCount: 2,
+        views: 940,
+        viewCount: 940,
+        lastActivity: "2 hours ago",
+        createdAt: "2026-09-26T09:00:00.000Z",
+        updatedAt: "2026-09-27T11:00:00.000Z",
+        tags: ["stepwells", "fieldwork", "vlog", "rani-ki-vav", "water-heritage"],
     },
 ];
 
@@ -952,3 +1162,97 @@ export const timeline: TimelineEvent[] = [
     { year: "1969", event: "ISRO Founded", note: "Vikram Sarabhai launches India's space program from a church in Kerala" },
     { year: "2023", event: "Chandrayaan-3", note: "India becomes the first nation to land on the Moon's south pole" },
 ];
+
+// In-memory sets and maps for comment bookmarks, stars, favorites, votes
+const mockBookmarkedCommentIds = new Set<string>();
+const mockCategoryStars = new Map<string, boolean>();
+const mockCategoryFavorites = new Map<string, boolean>();
+const mockCategoryCustomTags = new Map<string, string[]>();
+
+export function toggleMockCommentBookmark(postId: string): { bookmarked: boolean } {
+    if (mockBookmarkedCommentIds.has(postId)) {
+        mockBookmarkedCommentIds.delete(postId);
+        return { bookmarked: false };
+    } else {
+        mockBookmarkedCommentIds.add(postId);
+        return { bookmarked: true };
+    }
+}
+
+export function isCommentBookmarked(postId: string): boolean {
+    return mockBookmarkedCommentIds.has(postId);
+}
+
+export function getMockBookmarkedPosts(): Post[] {
+    return mockPosts.filter((p) => mockBookmarkedCommentIds.has(p.id));
+}
+
+export function toggleMockCategoryStar(categoryId: string): boolean {
+    const current = mockCategoryStars.get(categoryId) ?? false;
+    const next = !current;
+    mockCategoryStars.set(categoryId, next);
+    const cat = forumCategories.find((c) => c.id === categoryId);
+    if (cat) cat.isStarred = next;
+    return next;
+}
+
+export function toggleMockCategoryFavorite(categoryId: string): boolean {
+    const current = mockCategoryFavorites.get(categoryId) ?? false;
+    const next = !current;
+    mockCategoryFavorites.set(categoryId, next);
+    const cat = forumCategories.find((c) => c.id === categoryId);
+    if (cat) cat.isFavorite = next;
+    return next;
+}
+
+export function addMockCategoryTag(categoryId: string, tag: string): string[] {
+    const cleanTag = tag.trim().toLowerCase().replace(/^#/, "");
+    const cat = forumCategories.find((c) => c.id === categoryId);
+    const existing = mockCategoryCustomTags.get(categoryId) || cat?.tags || [];
+    if (!existing.includes(cleanTag)) {
+        const updated = [...existing, cleanTag];
+        mockCategoryCustomTags.set(categoryId, updated);
+        if (cat) cat.tags = updated;
+        return updated;
+    }
+    return existing;
+}
+
+export function voteMockDiscussion(discussionId: string, type: "up" | "down"): { upvotes: number; downvotes: number; userVote: "up" | "down" | null } {
+    const disc = mockDiscussions.find((d) => d.id === discussionId);
+    if (!disc) return { upvotes: 0, downvotes: 0, userVote: null };
+
+    if (disc.userVote === type) {
+        // Toggle off
+        if (type === "up") disc.upvotes = Math.max(0, (disc.upvotes || 1) - 1);
+        else disc.downvotes = Math.max(0, (disc.downvotes || 1) - 1);
+        disc.userVote = null;
+    } else {
+        if (disc.userVote === "up") disc.upvotes = Math.max(0, (disc.upvotes || 1) - 1);
+        if (disc.userVote === "down") disc.downvotes = Math.max(0, (disc.downvotes || 1) - 1);
+
+        if (type === "up") disc.upvotes = (disc.upvotes || 0) + 1;
+        else disc.downvotes = (disc.downvotes || 0) + 1;
+        disc.userVote = type;
+    }
+    return { upvotes: disc.upvotes || 0, downvotes: disc.downvotes || 0, userVote: disc.userVote };
+}
+
+export function voteMockPost(postId: string, type: "up" | "down"): { upvotes: number; downvotes: number; userVote: "up" | "down" | null } {
+    const post = mockPosts.find((p) => p.id === postId);
+    if (!post) return { upvotes: 0, downvotes: 0, userVote: null };
+
+    if (post.userVote === type) {
+        if (type === "up") post.upvotes = Math.max(0, (post.upvotes || 1) - 1);
+        else post.downvotes = Math.max(0, (post.downvotes || 1) - 1);
+        post.userVote = null;
+    } else {
+        if (post.userVote === "up") post.upvotes = Math.max(0, (post.upvotes || 1) - 1);
+        if (post.userVote === "down") post.downvotes = Math.max(0, (post.downvotes || 1) - 1);
+
+        if (type === "up") post.upvotes = (post.upvotes || 0) + 1;
+        else post.downvotes = (post.downvotes || 0) + 1;
+        post.userVote = type;
+    }
+    return { upvotes: post.upvotes || 0, downvotes: post.downvotes || 0, userVote: post.userVote };
+}

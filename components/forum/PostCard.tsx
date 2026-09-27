@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Clock, ThumbsUp, MessageSquare, Share2, Check, Edit3, Trash2, Loader2, Flag } from "lucide-react";
-import type { Post } from "@/types/forum";
+import { Clock, ThumbsUp, MessageSquare, Share2, Check, Edit3, Trash2, Loader2, Flag, ArrowBigUp, ArrowBigDown, Quote, Bookmark } from "lucide-react";
+import type { Post, ForumType } from "@/types/forum";
 import ReplyReference from "./ReplyReference";
 import FormattedBody from "./FormattedBody";
 
@@ -10,13 +10,18 @@ interface PostCardProps {
     isOriginalPost?: boolean;
     isHighlighted?: boolean;
     currentUserId?: string;
+    forumType?: ForumType;
     onReply: (post: Post) => void;
+    onQuote?: (post: Post) => void;
     onNavigateToPost: (postId: string) => void;
     onLike?: (postId: string) => void;
+    onVote?: (postId: string, type: "up" | "down") => void;
+    onBookmarkComment?: (postId: string) => void;
     onEdit?: (postId: string, newContent: string) => Promise<void>;
     onDelete?: (postId: string) => Promise<void>;
     onReport?: (post: Post) => void;
     isLiked?: boolean;
+    isBookmarked?: boolean;
 }
 
 function formatRelativeTime(dateInput: Date | string): string {
@@ -40,13 +45,18 @@ export default function PostCard({
     isOriginalPost = false,
     isHighlighted = false,
     currentUserId,
+    forumType,
     onReply,
+    onQuote,
     onNavigateToPost,
     onLike,
+    onVote,
+    onBookmarkComment,
     onEdit,
     onDelete,
     onReport,
     isLiked = false,
+    isBookmarked = false,
 }: PostCardProps) {
     const [copied, setCopied] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -210,9 +220,39 @@ export default function PostCard({
 
                     {/* Action Strip */}
                     <div
-                        className="flex items-center gap-4 sm:gap-5 text-xs pt-3 border-t border-[#EDE8DF]/70 text-[#9E8F85]"
+                        className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs pt-3 border-t border-[#EDE8DF]/70 text-[#9E8F85]"
                         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     >
+                        {/* Question Forum: Upvote / Downvote buttons on answers (every post except OP) */}
+                        {forumType === "question" && !isOriginalPost && onVote && (
+                            <div className="flex items-center gap-0.5 bg-[#F5F2EB] px-2 py-0.5 rounded-sm border border-[#E5DFD5]">
+                                <button
+                                    type="button"
+                                    onClick={() => onVote(post.id, "up")}
+                                    className={`p-1 rounded-xs hover:bg-white transition-colors cursor-pointer ${
+                                        post.userVote === "up" ? "text-emerald-700 font-bold" : "text-[#6B5B4E] hover:text-emerald-700"
+                                    }`}
+                                    title="Upvote answer"
+                                >
+                                    <ArrowBigUp className={`w-4 h-4 ${post.userVote === "up" ? "fill-emerald-600" : ""}`} />
+                                </button>
+                                <span className="text-xs font-bold text-[#1C1917] px-1 min-w-[16px] text-center">
+                                    {(post.upvotes || 0) - (post.downvotes || 0)}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => onVote(post.id, "down")}
+                                    className={`p-1 rounded-xs hover:bg-white transition-colors cursor-pointer ${
+                                        post.userVote === "down" ? "text-rose-700 font-bold" : "text-[#6B5B4E] hover:text-rose-700"
+                                    }`}
+                                    title="Downvote answer"
+                                >
+                                    <ArrowBigDown className={`w-4 h-4 ${post.userVote === "down" ? "fill-rose-600" : ""}`} />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Like button */}
                         <button
                             type="button"
                             onClick={() => onLike && onLike(post.id)}
@@ -239,7 +279,7 @@ export default function PostCard({
 
                         {post.likedBy && post.likedBy.length > 0 && (
                             <span
-                                className="text-[11px] text-[#9E8F85] hidden sm:inline-flex items-center gap-1"
+                                className="text-[11px] text-[#9E8F85] hidden md:inline-flex items-center gap-1"
                                 title={post.likedBy.map((a) => a.name).join(", ")}
                             >
                                 <span>
@@ -254,6 +294,7 @@ export default function PostCard({
                             </span>
                         )}
 
+                        {/* Reply button */}
                         <button
                             type="button"
                             onClick={() => onReply(post)}
@@ -262,6 +303,36 @@ export default function PostCard({
                             <MessageSquare className="w-3.5 h-3.5" />
                             <span>Reply</span>
                         </button>
+
+                        {/* Quote button */}
+                        {onQuote && (
+                            <button
+                                type="button"
+                                onClick={() => onQuote(post)}
+                                className="flex items-center gap-1.5 hover:text-[#B85428] transition-colors cursor-pointer text-[#9E8F85]"
+                                title="Quote this post in your reply"
+                            >
+                                <Quote className="w-3.5 h-3.5" />
+                                <span>Quote</span>
+                            </button>
+                        )}
+
+                        {/* Comment Bookmark button */}
+                        {onBookmarkComment && (
+                            <button
+                                type="button"
+                                onClick={() => onBookmarkComment(post.id)}
+                                className={`flex items-center gap-1.5 transition-colors cursor-pointer ${
+                                    isBookmarked
+                                        ? "text-blue-600 font-semibold"
+                                        : "hover:text-blue-600 text-[#9E8F85]"
+                                }`}
+                                title={isBookmarked ? "Remove comment bookmark" : "Bookmark this comment"}
+                            >
+                                <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? "fill-blue-600" : ""}`} />
+                                <span>{isBookmarked ? "Saved" : "Bookmark"}</span>
+                            </button>
+                        )}
 
                         {/* Author Edit */}
                         {isAuthor && onEdit && !isEditing && (
@@ -326,6 +397,7 @@ export default function PostCard({
                             </button>
                         )}
 
+                        {/* Share button */}
                         <button
                             type="button"
                             onClick={handleShare}
