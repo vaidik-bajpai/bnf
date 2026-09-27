@@ -80,11 +80,10 @@ export default function Navbar({
                     >
                         <NationalEmblemLogo className="w-12 h-10 transition-transform group-hover:scale-105 shrink-0 drop-shadow-[0_2px_8px_rgba(0,229,255,0.4)]" />
                         <div
-                            className={`whitespace-nowrap transition-all duration-500 overflow-hidden ${
-                                isHomeSection
-                                    ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
-                                    : "max-w-[340px] opacity-100 translate-x-0"
-                            }`}
+                            className={`whitespace-nowrap transition-all duration-500 overflow-hidden ${isHomeSection
+                                ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
+                                : "max-w-[340px] opacity-100 translate-x-0"
+                                }`}
                         >
                             <div
                                 className="text-white font-bold text-xs sm:text-sm tracking-[0.15em] uppercase leading-tight truncate"
@@ -98,11 +97,10 @@ export default function Navbar({
 
                 {/* 2. Center / Nav Items: Smoothly transitions between stretched and centered */}
                 <div
-                    className={`hidden lg:flex flex-1 items-center transition-all duration-500 ease-in-out ${
-                        isHomeSection
-                            ? "justify-end gap-10 mr-8 xl:mr-12"
-                            : "justify-center gap-8 xl:gap-11 mr-4 xl:mr-8"
-                    }`}
+                    className={`hidden lg:flex flex-1 items-center transition-all duration-500 ease-in-out ${isHomeSection
+                        ? "justify-between mr-8 xl:mr-12 2xl:mr-16"
+                        : "justify-center gap-8 xl:gap-11 mr-4 xl:mr-8"
+                        }`}
                 >
                     {user ? (
                         <>
@@ -132,7 +130,7 @@ export default function Navbar({
                                     if (pageState.view !== "home") onNavigate({ view: "home" });
                                     else window.scrollTo({ top: 0, behavior: "smooth" });
                                 }}
-                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "home" && pageState.view === "home"
+                                className={`text-xs font-bold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "home" && pageState.view === "home"
                                     ? "text-[#C8971A] border-[#C8971A]"
                                     : "text-white/70 hover:text-white border-transparent"
                                     }`}
@@ -148,7 +146,7 @@ export default function Navbar({
                                         onScrollToSection("awakening");
                                     }
                                 }}
-                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${(currentSection === "awakening" || currentSection === "heritage") && pageState.view === "home"
+                                className={`text-xs font-bold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${(currentSection === "awakening" || currentSection === "heritage") && pageState.view === "home"
                                     ? "text-[#C8971A] border-[#C8971A]"
                                     : "text-white/70 hover:text-white border-transparent"
                                     }`}
@@ -164,7 +162,7 @@ export default function Navbar({
                                         onScrollToSection("ideas");
                                     }
                                 }}
-                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "ideas" && pageState.view === "home"
+                                className={`text-xs font-bold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "ideas" && pageState.view === "home"
                                     ? "text-[#C8971A] border-[#C8971A]"
                                     : "text-white/70 hover:text-white border-transparent"
                                     }`}
@@ -173,7 +171,7 @@ export default function Navbar({
                             </button>
                             <button
                                 onClick={() => onNavigate({ view: "forum" })}
-                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${pageState.view === "forum"
+                                className={`text-xs font-bold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${pageState.view === "forum"
                                     ? "text-[#C8971A] border-[#C8971A]"
                                     : "text-white/70 hover:text-white border-transparent"
                                     }`}
@@ -189,7 +187,7 @@ export default function Navbar({
                                         onScrollToSection("about");
                                     }
                                 }}
-                                className={`text-xs font-semibold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "about" && pageState.view === "home"
+                                className={`text-xs font-bold tracking-[0.18em] uppercase transition-colors cursor-pointer py-1 border-b-2 ${currentSection === "about" && pageState.view === "home"
                                     ? "text-[#C8971A] border-[#C8971A]"
                                     : "text-white/70 hover:text-white border-transparent"
                                     }`}
