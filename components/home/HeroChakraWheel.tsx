@@ -64,7 +64,7 @@ export default function HeroChakraWheel({ className = '' }: HeroChakraWheelProps
       {/* Exact Ashoka Chakra Wheel from Wheel.jpeg */}
       <div
         ref={wheelRef}
-        className="relative w-[340px] h-[340px] sm:w-[500px] sm:h-[500px] md:w-[620px] md:h-[620px] lg:w-[720px] lg:h-[720px] xl:w-[780px] xl:h-[780px] flex items-center justify-center"
+        className="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[400px] md:h-[400px] lg:w-[450px] lg:h-[450px] xl:w-[480px] xl:h-[480px] max-w-[62vh] max-h-[62vh] flex items-center justify-center"
         style={{
           transformOrigin: '50% 50%',
         }}
