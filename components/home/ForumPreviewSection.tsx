@@ -15,7 +15,7 @@ export default function ForumPreviewSection({
     return (
         <section className="py-24 bg-[#FAFAF7]">
             <div className="max-w-6xl mx-auto px-6">
-                <div className="grid lg:grid-cols-2 gap-14 items-center">
+                <div className="grid lg:grid-cols-2 gap-14 items-center mt-32">
                     <div>
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-px w-12 bg-[#B85428]/30" />

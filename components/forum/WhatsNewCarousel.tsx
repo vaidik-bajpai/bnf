@@ -91,12 +91,14 @@ interface WhatsNewCarouselProps {
   onViewMegaThread?: (id: string) => void;
   onViewThread?: (id: string) => void;
   slides?: SpotlightSlide[];
+  compact?: boolean;
 }
 
 export default function WhatsNewCarousel({
   onViewMegaThread,
   onViewThread,
   slides = defaultSlides,
+  compact = false,
 }: WhatsNewCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -149,7 +151,9 @@ export default function WhatsNewCarousel({
 
   return (
     <div
-      className="bg-[#0A1633]/85 hover:bg-[#0C1A3D] border border-white/10 hover:border-[#E5A93C]/40 rounded-xl p-3.5 sm:p-4 backdrop-blur-md shadow-2xl transition-all duration-300 relative group flex flex-col select-none"
+      className={`bg-[#0A1633]/85 hover:bg-[#0C1A3D] border border-white/10 hover:border-[#E5A93C]/40 rounded-xl ${
+        compact ? "p-3 sm:p-3.5" : "p-3.5 sm:p-4"
+      } backdrop-blur-md shadow-2xl transition-all duration-300 relative group flex flex-col select-none`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
@@ -157,18 +161,18 @@ export default function WhatsNewCarousel({
       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
     >
       {/* Top Header: Badge & Tag (Clean, single-line, non-wrapping) */}
-      <div className="flex items-center justify-between mb-2.5 h-5 shrink-0 overflow-hidden">
+      <div className={`flex items-center justify-between ${compact ? "mb-2 h-4.5" : "mb-2.5 h-5"} shrink-0 overflow-hidden`}>
         <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-          <span className="text-[10px] font-bold tracking-widest text-[#E5A93C] uppercase flex items-center gap-1 bg-[#E5A93C]/10 border border-[#E5A93C]/25 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+          <span className="text-[10px] sm:text-[11px] font-bold tracking-widest text-[#E5A93C] uppercase flex items-center gap-1 bg-[#E5A93C]/10 border border-[#E5A93C]/25 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
             <Sparkles className="w-2.5 h-2.5 text-[#E5A93C]" /> {currentSlide.badge}
           </span>
-          <span className="text-[10px] text-white/50 tracking-wider uppercase font-semibold truncate whitespace-nowrap">
+          <span className="text-[10px] sm:text-[11px] text-white/50 tracking-wider uppercase font-semibold truncate whitespace-nowrap">
             {currentSlide.tag}
           </span>
         </div>
 
         {/* Slide Counter on Right */}
-        <span className="text-[10px] font-mono text-white/40 shrink-0 ml-2 whitespace-nowrap">
+        <span className="text-[10px] sm:text-[11px] font-mono text-white/40 shrink-0 ml-2 whitespace-nowrap">
           {currentIndex + 1} / {slides.length}
         </span>
       </div>
@@ -177,7 +181,9 @@ export default function WhatsNewCarousel({
       <div className="relative overflow-hidden rounded-lg shrink-0">
         <div
           onClick={handleActionClick}
-          className="relative aspect-video max-h-[160px] sm:max-h-[175px] rounded-lg overflow-hidden cursor-pointer group/media shadow-md"
+          className={`relative aspect-video ${
+            compact ? "max-h-[135px] sm:max-h-[148px]" : "max-h-[160px] sm:max-h-[175px]"
+          } rounded-lg overflow-hidden cursor-pointer group/media shadow-md`}
         >
           <img
             key={currentSlide.id}
@@ -191,13 +197,13 @@ export default function WhatsNewCarousel({
 
           {/* Center Circular Play / Explore Button */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/40 backdrop-blur-md border border-white/30 flex items-center justify-center text-white group-hover/media:bg-[#E5A93C] group-hover/media:text-slate-950 transition-all duration-300 shadow-xl group-hover/media:scale-110">
-              <Play className="w-4 h-4 fill-current ml-0.5" />
+            <div className={`${compact ? "w-9 h-9 sm:w-10 sm:h-10" : "w-10 h-10 sm:w-11 sm:h-11"} rounded-full bg-black/40 backdrop-blur-md border border-white/30 flex items-center justify-center text-white group-hover/media:bg-[#E5A93C] group-hover/media:text-slate-950 transition-all duration-300 shadow-xl group-hover/media:scale-110`}>
+              <Play className={`${compact ? "w-3.5 h-3.5" : "w-4 h-4"} fill-current ml-0.5`} />
             </div>
           </div>
 
           {/* Bottom Title Overlay on Media Thumbnail */}
-          <div className="absolute bottom-2.5 left-2.5 right-2.5 text-left">
+          <div className="absolute bottom-2 left-2 right-2 text-left">
             <div className="text-[9px] font-semibold text-[#E5A93C] tracking-wide uppercase truncate">
               {currentSlide.tag}
             </div>
@@ -209,16 +215,16 @@ export default function WhatsNewCarousel({
       </div>
 
       {/* Slide Details & Footer */}
-      <div className="mt-2.5 pt-2.5 border-t border-white/10 flex flex-col">
-        <div className="flex items-start justify-between gap-2.5 mb-1">
+      <div className={`${compact ? "mt-2 pt-2" : "mt-2.5 pt-2.5"} border-t border-white/10 flex flex-col`}>
+        <div className="flex items-start justify-between gap-2 mb-1">
           <div className="min-w-0 flex-1">
             <h3
-              className="text-white font-bold text-xs sm:text-sm leading-snug group-hover:text-[#E5A93C] transition-colors truncate"
+              className={`text-white font-bold ${compact ? "text-xs sm:text-[13px]" : "text-xs sm:text-sm"} leading-snug group-hover:text-[#E5A93C] transition-colors truncate`}
               style={{ fontFamily: "'Fraunces', serif" }}
             >
               {currentSlide.title}
             </h3>
-            <div className="text-[10px] text-white/50 mt-0.5 flex items-center gap-1.5 truncate">
+            <div className="text-[10px] sm:text-[11px] text-white/50 mt-0.5 flex items-center gap-1.5 truncate">
               <span className="flex items-center gap-1 shrink-0">
                 <Clock className="w-2.5 h-2.5 text-[#E5A93C]" /> {currentSlide.date}
               </span>
@@ -230,25 +236,25 @@ export default function WhatsNewCarousel({
           {/* Action Explore Button */}
           <button
             onClick={handleActionClick}
-            className="shrink-0 bg-white/10 hover:bg-[#E5A93C] text-white hover:text-slate-950 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide transition-all duration-300 cursor-pointer flex items-center gap-1 shadow-sm group-hover:bg-[#E5A93C]/90 group-hover:text-slate-950"
+            className={`shrink-0 bg-white/10 hover:bg-[#E5A93C] text-white hover:text-slate-950 ${compact ? "px-2.5 py-1 text-[11px]" : "px-2.5 py-1 text-[11px]"} rounded-full font-semibold tracking-wide transition-all duration-300 cursor-pointer flex items-center gap-1 shadow-sm group-hover:bg-[#E5A93C]/90 group-hover:text-slate-950`}
           >
             <span>{currentSlide.actionText}</span>
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className={`${compact ? "w-3 h-3" : "w-3 h-3"}`} />
           </button>
         </div>
 
-        {/* Stable 2-Line Description with Fixed Height */}
+        {/* Stable Description */}
         <p
-          className="text-white/65 text-[11px] leading-relaxed line-clamp-2 h-8 overflow-hidden"
+          className={`text-white/65 text-[11px] sm:text-[12px] leading-relaxed ${
+            compact ? "line-clamp-2 h-8 sm:h-9" : "line-clamp-2 h-8"
+          } overflow-hidden`}
           style={{ fontFamily: "'Spectral', Georgia, serif" }}
         >
           {currentSlide.description}
         </p>
 
-        {/* ============================================================== */}
-        {/* BOTTOM CENTER SLIDE SELECTOR INDICATORS                         */}
-        {/* ============================================================== */}
-        <div className="flex items-center justify-center gap-1.5 pt-2 mt-1 border-t border-white/5">
+        {/* BOTTOM CENTER SLIDE SELECTOR INDICATORS */}
+        <div className={`flex items-center justify-center gap-1.5 ${compact ? "pt-1 mt-0.5" : "pt-2 mt-1"} border-t border-white/5`}>
           {slides.map((_, idx) => (
             <button
               key={idx}
