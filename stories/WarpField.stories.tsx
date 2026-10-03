@@ -19,7 +19,7 @@ const meta: Meta<typeof WarpFieldBackground> = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['streaks', 'letters', 'keycaps', 'hyperspace'],
+      options: ['streaks', 'letters', 'keycaps', 'hyperspace', 'tricolor'],
       description: 'Warp field variant orchestration',
       table: {
         defaultValue: { summary: 'streaks' },
@@ -37,6 +37,13 @@ const meta: Meta<typeof WarpFieldBackground> = {
       description: 'Opacity scaling for line streaks',
       table: {
         defaultValue: { summary: '0.6' },
+      },
+    },
+    streakThickness: {
+      control: { type: 'range', min: 0.5, max: 12, step: 0.5 },
+      description: 'Thickness of the additive line streaks in pixels',
+      table: {
+        defaultValue: { summary: '1.5' },
       },
     },
     tileOpacity: {
@@ -80,6 +87,7 @@ const meta: Meta<typeof WarpFieldBackground> = {
     speed: 15,
     streakOpacity: 0.6,
     tileOpacity: 0.9,
+    streakThickness: 1.5,
     fov: 75,
     brightness: 1,
     hue: 0,
@@ -203,3 +211,45 @@ export const InAspectRatioBox: Story = {
     ),
   ],
 };
+
+/**
+ * Tricolour Warp: 450 randomized additive streaks of Indian saffron (#FF9933), pure luminous white (#FFFFFF), and vivid green (#138808), streaming alongside luminous tricolour tiles through deep cosmos navy.
+ */
+export const TricolorWarp: Story = {
+  args: {
+    variant: 'tricolor',
+    speed: 16,
+    streakOpacity: 0.8,
+    tileOpacity: 0.95,
+    streakThickness: 2.0,
+  },
+};
+
+/**
+ * Thick Luminous Beams: Customizable streak thickness (4.0px) turning the streaks into radiant neon light shafts.
+ */
+export const ThickBeamsWarp: Story = {
+  args: {
+    variant: 'streaks',
+    speed: 18,
+    streakThickness: 4.5,
+    streakOpacity: 0.85,
+    tileOpacity: 0.95,
+  },
+};
+
+/**
+ * Ultra-Thick Tricolour Warp: 5.5px thick streams of saffron, white, and green light beams rushing through space.
+ */
+export const UltraThickTricolor: Story = {
+  args: {
+    variant: 'tricolor',
+    speed: 20,
+    streakThickness: 5.5,
+    streakOpacity: 0.9,
+    tileOpacity: 0.95,
+  },
+};
+
+
+

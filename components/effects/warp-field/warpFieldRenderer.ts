@@ -1,10 +1,14 @@
 import * as THREE from "three";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 
 export const WARP_FIELD_VARIANTS = [
   "streaks",
   "letters",
   "keycaps",
   "hyperspace",
+  "tricolor",
 ] as const;
 
 export type WarpFieldVariant = (typeof WARP_FIELD_VARIANTS)[number];
@@ -14,10 +18,12 @@ export type WarpFieldOptions = {
   speed: number;
   streakOpacity: number;
   tileOpacity: number;
+  streakThickness: number;
   fov: number;
   brightness: number;
   hue: number;
   saturation: number;
+  palette?: number[];
 };
 
 export const WARP_FIELD_DEFAULTS: WarpFieldOptions = {
@@ -25,6 +31,7 @@ export const WARP_FIELD_DEFAULTS: WarpFieldOptions = {
   speed: 15,
   streakOpacity: 0.6,
   tileOpacity: 0.9,
+  streakThickness: 1.5,
   fov: 75,
   brightness: 1,
   hue: 0,
@@ -44,6 +51,7 @@ const SPEED_SCALES: Record<WarpFieldVariant, number> = {
   letters: 0.5,
   keycaps: 0.7,
   hyperspace: 2.4,
+  tricolor: 1.0,
 };
 
 const BACKGROUND_COLORS: Record<WarpFieldVariant, number> = {
@@ -51,6 +59,7 @@ const BACKGROUND_COLORS: Record<WarpFieldVariant, number> = {
   letters: 132106,
   keycaps: 198412,
   hyperspace: 66058,
+  tricolor: 197906, // 0x030512 deep cosmos navy
 };
 
 interface StreakConfig {
@@ -100,17 +109,46 @@ const STREAK_CONFIGS: Record<WarpFieldVariant, StreakConfig> = {
     palette: [16777215, 14412542, 9684477, 6333946, 13095678],
     opacityScale: 1.45,
   },
+  tricolor: {
+    count: 450,
+    radiusMin: 20,
+    radiusSpread: 800,
+    lengthMin: 50,
+    lengthSpread: 160,
+    palette: [
+      // Saffron (Kesari)
+      0xFF9933, // Indian Flag Saffron
+      0xFF7700, // Deep Saffron Orange
+      0xFFA500, // Vibrant Saffron
+      0xFFB020, // Golden Amber Saffron
+      // White (Shweta)
+      0xFFFFFF, // Pure Brilliant White
+      0xF8FAFC, // Luminous Crystalline White
+      0xEDF2F7, // Pearl White
+      // Green (Harita)
+      0x138808, // Indian Flag Green
+      0x16A34A, // Vivid Leaf Green
+      0x22C55E, // Luminous Emerald Green
+      0x0E6904, // Deep Forest Green
+    ],
+    opacityScale: 1.1,
+  },
 };
 
 function createStreaks(
   group: THREE.Group,
   config: StreakConfig,
-  initialOpacity: number
+  initialOpacity: number,
+  initialThickness: number,
+  customPalette?: number[]
 ) {
-  const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(config.count * 6);
   const colors = new Float32Array(config.count * 6);
-  const palette = config.palette.map((t) => new THREE.Color(t));
+  const activePalette =
+    customPalette && customPalette.length > 0
+      ? customPalette
+      : config.palette;
+  const palette = activePalette.map((t) => new THREE.Color(t));
 
   for (let t = 0; t < config.count; t += 1) {
     const angle = Math.random() * Math.PI * 2;
@@ -136,20 +174,32 @@ function createStreaks(
     colors[t * 6 + 5] = color.b;
   }
 
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  const geometry = new LineSegmentsGeometry();
+  geometry.setPositions(positions);
+  geometry.setColors(colors);
 
-  const material = new THREE.LineBasicMaterial({
+  const material = new LineMaterial({
     vertexColors: true,
     transparent: true,
     opacity: initialOpacity * config.opacityScale,
     blending: THREE.AdditiveBlending,
+    linewidth: Math.max(0.5, initialThickness),
+    depthWrite: false,
   });
+  material.resolution.set(
+    typeof window !== "undefined" ? window.innerWidth || 1920 : 1920,
+    typeof window !== "undefined" ? window.innerHeight || 1080 : 1080
+  );
 
-  const lines = new THREE.LineSegments(geometry, material);
+  const lines = new LineSegments2(geometry, material);
   group.add(lines);
 
-  const positionAttr = geometry.attributes.position as THREE.BufferAttribute;
+  interface InterleavedBufferAttributeLike {
+    data?: { needsUpdate: boolean };
+  }
+  const instanceStartAttr = geometry.attributes.instanceStart as unknown as
+    | InterleavedBufferAttributeLike
+    | undefined;
 
   return {
     update(speed: number) {
@@ -162,12 +212,22 @@ function createStreaks(
           positions[r * 6 + 5] = STREAK_RESET_Z + delta;
         }
       }
-      positionAttr.needsUpdate = true;
+      if (instanceStartAttr?.data) {
+        instanceStartAttr.data.needsUpdate = true;
+      } else {
+        geometry.setPositions(positions);
+      }
     },
-    setOpacity(opacity: number) {
+    resize(width: number, height: number) {
+      material.resolution.set(Math.max(1, width), Math.max(1, height));
+    },
+    setOpacity(opacity: number, thickness?: number) {
       const scaled = opacity * config.opacityScale;
       if (material.opacity !== scaled) {
         material.opacity = scaled;
+      }
+      if (thickness !== undefined && material.linewidth !== thickness) {
+        material.linewidth = Math.max(0.5, thickness);
       }
     },
     dispose() {
@@ -177,7 +237,11 @@ function createStreaks(
   };
 }
 
-function createTiles(group: THREE.Group, initialOpacity: number) {
+function createTiles(
+  group: THREE.Group,
+  initialOpacity: number,
+  isTricolor = false
+) {
   const geometry = new THREE.PlaneGeometry(8, 20);
   const baseMaterial = new THREE.MeshBasicMaterial({
     color: 16777215,
@@ -188,15 +252,32 @@ function createTiles(group: THREE.Group, initialOpacity: number) {
   const tiles: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>[] = [];
   let currentOpacity = initialOpacity;
 
+  const tricolorTilePalette = [
+    0xFF9933, // Saffron
+    0xFFB020, // Golden Amber
+    0xFFFFFF, // Pure White
+    0xF8FAFC, // Crisp White
+    0x138808, // India Green
+    0x22C55E, // Luminous Emerald Green
+  ];
+
   for (let p = 0; p < 40; p += 1) {
     const mat = baseMaterial.clone();
-    mat.color.setHex(
-      Math.random() > 0.6
-        ? 11006928 // 0xA7F3D0
-        : Math.random() > 0.5
-        ? 13761253 // 0xD1FAE5
-        : 16777215 // 0xFFFFFF
-    );
+    if (isTricolor) {
+      mat.color.setHex(
+        tricolorTilePalette[
+          Math.floor(Math.random() * tricolorTilePalette.length)
+        ]
+      );
+    } else {
+      mat.color.setHex(
+        Math.random() > 0.6
+          ? 11006928 // 0xA7F3D0
+          : Math.random() > 0.5
+          ? 13761253 // 0xD1FAE5
+          : 16777215 // 0xFFFFFF
+      );
+    }
     const mesh = new THREE.Mesh(geometry, mat);
     const angle = Math.random() * Math.PI * 2;
     const dist = Math.random() * 400 + 100;
@@ -754,12 +835,27 @@ export function createWarpFieldRenderer(
 
   const layers: {
     update?: (speed: number, time: number) => void;
-    setOpacity?: (streakOpacity: number, tileOpacity: number) => void;
+    setOpacity?: (
+      streakOpacity: number,
+      tileOpacity: number,
+      streakThickness?: number
+    ) => void;
+    resize?: (width: number, height: number) => void;
     dispose: () => void;
-  }[] = [createStreaks(group, STREAK_CONFIGS[variant], options.streakOpacity)];
+  }[] = [
+    createStreaks(
+      group,
+      STREAK_CONFIGS[variant],
+      options.streakOpacity,
+      options.streakThickness,
+      options.palette
+    ),
+  ];
 
   if (variant === "streaks") {
-    layers.push(createTiles(group, options.tileOpacity));
+    layers.push(createTiles(group, options.tileOpacity, false));
+  } else if (variant === "tricolor") {
+    layers.push(createTiles(group, options.tileOpacity, true));
   } else if (variant === "letters") {
     layers.push(createLetters(group, options.tileOpacity));
   } else if (variant === "keycaps") {
@@ -775,6 +871,9 @@ export function createWarpFieldRenderer(
       camera.aspect = width / Math.max(1, height);
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
+      layers.forEach((layer) => {
+        layer.resize?.(width, height);
+      });
     },
     render() {
       const currentOpts = getOptions();
@@ -785,7 +884,11 @@ export function createWarpFieldRenderer(
       time += 1 / 60;
       const speed = currentOpts.speed * SPEED_SCALES[variant];
       layers.forEach((layer) => {
-        layer.setOpacity?.(currentOpts.streakOpacity, currentOpts.tileOpacity);
+        layer.setOpacity?.(
+          currentOpts.streakOpacity,
+          currentOpts.tileOpacity,
+          currentOpts.streakThickness
+        );
         layer.update?.(speed, time);
       });
       renderer.render(scene, camera);

@@ -13,8 +13,12 @@ import Navbar from '../Navbar';
 import type { PageState } from '@/types/forum';
 
 export interface HeroWithWarpFieldProps {
-  /** Optional warp options override (speed, opacities, variant, fov, hue, brightness, saturation) */
+  /** Optional warp options override (speed, opacities, variant, fov, hue, brightness, saturation, streakThickness) */
   warpOptions?: WarpFieldBackgroundProps;
+  /** Direct warp variant shortcut (e.g. 'tricolor' | 'streaks' | 'hyperspace' | 'keycaps' | 'letters') */
+  warpVariant?: WarpFieldBackgroundProps['variant'];
+  /** Direct streak thickness shortcut in pixels */
+  streakThickness?: number;
   /** Whether to render the App Navbar on top */
   showNavbar?: boolean;
   /** Whether to render the rotating Ashoka Chakra wheel */
@@ -35,6 +39,8 @@ export interface HeroWithWarpFieldProps {
 
 export default function HeroWithWarpField({
   warpOptions = {},
+  warpVariant,
+  streakThickness,
   showNavbar = true,
   showChakraWheel = true,
   showEmbers = true,
@@ -45,6 +51,12 @@ export default function HeroWithWarpField({
   onMissionClick,
 }: HeroWithWarpFieldProps) {
   const [pageState, setPageState] = React.useState<PageState>({ view: 'home' });
+
+  const activeWarpOptions = {
+    ...warpOptions,
+    ...(warpVariant ? { variant: warpVariant } : {}),
+    ...(streakThickness !== undefined ? { streakThickness } : {}),
+  };
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
@@ -69,7 +81,7 @@ export default function HeroWithWarpField({
       <div className="absolute inset-0 z-0 overflow-hidden">
         <WarpFieldBackground
           className="w-full h-full"
-          {...warpOptions}
+          {...activeWarpOptions}
         />
         {/* Subtle Vignette & Atmospheric Gradients to Blend Warp Depth with Typography */}
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#02040A]/95 via-transparent to-[#02040A]/50" />

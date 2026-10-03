@@ -169,7 +169,7 @@ export function WarpFieldBackground({
       intersectionObserver.disconnect();
       renderer?.dispose();
     };
-  }, [userOptions.variant]); // Re-create renderer if variant changes
+  }, [userOptions.variant, userOptions.palette]); // Re-create renderer if variant or palette changes
 
   const { hue, saturation, brightness } = resolvedOptions;
 
