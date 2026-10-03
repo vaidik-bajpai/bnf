@@ -25,7 +25,32 @@ interface AuthContextType {
     closeAuthModal: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function MockAuthProvider({
+    children,
+    user = null,
+}: {
+    children: React.ReactNode;
+    user?: AuthUser | null;
+}) {
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                status: user ? "authenticated" : "unauthenticated",
+                isLoading: false,
+                loginWithGoogle: () => {},
+                logout: () => {},
+                requireAuth: (fn) => fn(),
+                isAuthModalOpen: false,
+                closeAuthModal: () => {},
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
+}
 
 function AuthStateBridge({ children }: { children: React.ReactNode }) {
     const { data: session, status } = useSession();

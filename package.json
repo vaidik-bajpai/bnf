@@ -12,7 +12,9 @@
     "db:reset": "npx tsx prisma/unseed.ts && npx tsx prisma/seed.ts",
     "test": "npx tsx --test tests/*.test.ts",
     "pipeline:test": "npx tsx scripts/test-pipeline.ts",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma skills sync || exit 0",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -28,7 +30,8 @@
     "next-auth": "^5.0.0-beta.32",
     "pg": "^8.23.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "0.128.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -36,11 +39,25 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.128.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "prisma": "^6.4.1",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
-    "typescript": "^5"
+    "typescript": "^5",
+    "storybook": "^10.6.1",
+    "@storybook/nextjs-vite": "^10.6.1",
+    "@chromatic-com/storybook": "latest",
+    "@storybook/addon-vitest": "^10.6.1",
+    "@storybook/addon-a11y": "^10.6.1",
+    "@storybook/addon-docs": "^10.6.1",
+    "@storybook/addon-mcp": "^10.6.1",
+    "vite": "latest",
+    "eslint-plugin-storybook": "^10.6.1",
+    "vitest": "^4",
+    "@vitest/browser-playwright": "^4",
+    "@vitest/coverage-v8": "^4",
+    "playwright": "latest"
   }
 }
