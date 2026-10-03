@@ -5,9 +5,10 @@ import gsap from 'gsap';
 
 interface HeroChakraWheelProps {
   className?: string;
+  size?: number;
 }
 
-export default function HeroChakraWheel({ className = '' }: HeroChakraWheelProps) {
+export default function HeroChakraWheel({ className = '', size }: HeroChakraWheelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
 
@@ -64,8 +65,10 @@ export default function HeroChakraWheel({ className = '' }: HeroChakraWheelProps
       {/* Exact Ashoka Chakra Wheel from Wheel.jpeg */}
       <div
         ref={wheelRef}
-        className="relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[400px] md:h-[400px] lg:w-[450px] lg:h-[450px] xl:w-[480px] xl:h-[480px] max-w-[62vh] max-h-[62vh] flex items-center justify-center"
+        className={size ? "relative flex items-center justify-center" : "relative w-[280px] h-[280px] sm:w-[350px] sm:h-[350px] md:w-[400px] md:h-[400px] lg:w-[450px] lg:h-[450px] xl:w-[480px] xl:h-[480px] max-w-[62vh] max-h-[62vh] flex items-center justify-center"}
         style={{
+          width: size ? `${size}px` : undefined,
+          height: size ? `${size}px` : undefined,
           transformOrigin: '50% 50%',
         }}
       >

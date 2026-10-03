@@ -19,7 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@designcodeio/threeui": ["./src/shaders/index.ts"],
+      "@designcodeio/threeui/style.css": ["./src/shaders/style.css"],
+      "@designcodeio/threeui/*": ["./src/shaders/*"]
     }
   },
   "include": [
