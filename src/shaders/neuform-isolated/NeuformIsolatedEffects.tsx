@@ -218,7 +218,17 @@ function transformThinkingButtonSource(source: string, mode: EffectMode) {
   return source
     .replace("<title>Uploading — glowing border microinteraction</title>", "<title>Thinking — glowing border microinteraction</title>")
     .replace("<style>", '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap" rel="stylesheet">\n<style>')
+    .replace(":root{ color-scheme: dark; }", ":root{ color-scheme: normal; }")
+    .replaceAll("background:#1d1d1d;", "background:transparent;")
+    .replace(
+      /ctx\.fillStyle\s*=\s*['"]#1d1d1d['"];\s*ctx\.fillRect\(0,0,cv\.width,cv\.height\);/,
+      "ctx.clearRect(0,0,cv.width,cv.height);",
+    )
     .replaceAll("#1d1d1d", background)
+    .replace(
+      /ctx\.fillStyle\s*=\s*['"][^'"]+['"];\s*ctx\.fillRect\(0,0,cv\.width,cv\.height\);/,
+      "ctx.clearRect(0,0,cv.width,cv.height);",
+    )
     .replace("var word = 'Uploading'", "var word = 'Thinking'")
     .replace(
       'var FONT = \'300 100px -apple-system, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Inter, system-ui, "Segoe UI", Roboto, sans-serif\';',
@@ -234,6 +244,10 @@ function transformThinkingButtonSource(source: string, mode: EffectMode) {
     .replaceAll("rgb(83,92,135)", "rgb(219,234,254)")
     .replaceAll("rgb(97,106,150)", "rgb(239,246,255)")
     .replace("rgb(133,141,189)", "rgb(255,255,255)")
+    .replace(
+      "ctx.strokeStyle = 'rgba(120,140,255,0.048)';",
+      `ctx.strokeStyle = '${mode === "light" ? "rgba(37,99,235,0.22)" : "rgba(120,140,255,0.20)"}';`,
+    )
 
     /* The recording framed one oversized hero button. SCL shrinks the whole
        composition — plate, track, comet widths, blur radii — down to a normal
@@ -1432,71 +1446,43 @@ const EFFECTS = {
   ignition: {
     title: "Ignition Button shader button",
     source: ignitionSource,
-    background: "#f0ede7",
-    theme: {
-      nativeMode: "light",
-      lightBackground: "#f0ede7",
-      darkBackground: "#121316",
-      invertBackground: true,
-    },
+    background: "transparent",
     targets: [
-      { selector: "#bg-gl", role: "background" },
-      { selector: "#btn", role: "button" },
+      { selector: "#btn", role: "button", preserveTransform: true },
     ],
+    hiddenTargets: ["#bg-gl", "header", "main > *:not(.intro-wrapper)", ".stagger-word"],
   },
   induction: {
     title: "Induction Button kinetic button",
     source: inductionSource,
-    background: "#050505",
-    theme: {
-      nativeMode: "dark",
-      lightBackground: "#f4f7fb",
-      darkBackground: "#050505",
-      invertBackground: true,
-    },
+    background: "transparent",
     targets: [
-      { selector: "#bg-canvas", role: "background" },
-      { selector: "#btn", role: "button" },
+      { selector: "#btn", role: "button", preserveTransform: true },
     ],
+    hiddenTargets: ["#bg-canvas", "nav", "#intro-tags", "#note-text"],
   },
   aetherisLabs: {
     title: "Aetheris Labs plasma button",
     source: aetherisLabsSource,
-    background: "#020614",
-    theme: {
-      nativeMode: "dark",
-      lightBackground: "#f4f7fb",
-      darkBackground: "#020614",
-      invertBackground: true,
-    },
+    background: "transparent",
     targets: [
-      { selector: "#bg-gl", role: "background" },
-      { selector: "#btn", role: "button" },
+      { selector: "#btn", role: "button", preserveTransform: true },
     ],
+    hiddenTargets: ["#bg-gl", "header", "nav", "h1", ".gs-scale-up > *:not(#btn)"],
   },
   tactile: {
     title: "Nexus tactile fluidics button",
     source: tactileSource,
-    background: "#03090d",
-    theme: {
-      nativeMode: "dark",
-      lightBackground: "#f4f7fb",
-      darkBackground: "#03090d",
-      invertBackground: true,
-    },
+    background: "transparent",
     targets: [
-      { selector: "#bg-canvas", role: "background" },
-      { selector: "#btn", role: "button" },
+      { selector: "#btn", role: "button", preserveTransform: true },
     ],
+    hiddenTargets: ["#bg-canvas", "header", "h1", ".subhead", ".note", "nav"],
   },
   thinking: {
     title: "Thinking Button canvas animation",
     source: thinkingSource,
-    background: "#111318",
-    theme: {
-      lightBackground: "#f4f7fb",
-      darkBackground: "#111318",
-    },
+    background: "transparent",
     transformSource: transformThinkingButtonSource,
     targets: [{ selector: "#stage", role: "button" }],
   },
@@ -1673,11 +1659,19 @@ function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+function isButtonDefinition(definition: EffectDefinition) {
+  return definition.targets.some((target) => target.role === "button");
+}
+
 function effectBackground(definition: EffectDefinition, mode: EffectMode) {
+  if (isButtonDefinition(definition)) {
+    return "transparent";
+  }
   return definition.theme?.[`${mode}Background`] ?? definition.background;
 }
 
 function buildFocusedDocument(definition: EffectDefinition, mode: EffectMode) {
+  const isButton = isButtonDefinition(definition);
   const background = effectBackground(definition, mode);
   const invertBackground = definition.theme?.invertBackground === true && definition.theme.nativeMode !== mode;
   const source = definition.transformSource?.(definition.source, mode) ?? definition.source;
@@ -1690,7 +1684,8 @@ function buildFocusedDocument(definition: EffectDefinition, mode: EffectMode) {
     ? `${definition.introWordmark.sceneSelector} .tx { font-size: ${definition.introWordmark.fontSize}px !important; }`
     : "";
   const focusStyle = `<style data-threeui-focus>
-html, body { width: 100% !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: ${background} !important; color-scheme: ${mode} !important; }
+html, body { width: 100% !important; height: 100% !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: ${background} !important; ${isButton ? "color-scheme: normal !important;" : `color-scheme: ${mode} !important;`} }
+${isButton ? `html, html:root, body, .component-wrapper, #stage, main, body > * { background: transparent !important; color-scheme: normal !important; }` : ""}
 body { position: relative !important; display: flex !important; align-items: center !important; justify-content: center !important; }
 body > * { visibility: hidden !important; }
 body[data-threeui-ready] > [data-threeui-role] { visibility: visible !important; }

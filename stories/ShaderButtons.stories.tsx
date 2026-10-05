@@ -93,10 +93,8 @@ export const IgnitionButtonStory: Story = {
     saturation: 1.0,
     brightness: 1.0,
     style: {
-      width: '420px',
-      height: '340px',
-      borderRadius: '16px',
-      overflow: 'hidden',
+      width: '360px',
+      height: '240px',
     },
   },
 };
@@ -115,10 +113,8 @@ export const LightSwitchStory: Story = {
     saturation: 1.0,
     brightness: 1.0,
     style: {
-      width: '420px',
-      height: '340px',
-      borderRadius: '16px',
-      overflow: 'hidden',
+      width: '360px',
+      height: '240px',
     },
   },
 };
@@ -136,10 +132,8 @@ export const LightSwitchLightMode: Story = {
     saturation: 1.0,
     brightness: 1.0,
     style: {
-      width: '420px',
-      height: '340px',
-      borderRadius: '16px',
-      overflow: 'hidden',
+      width: '360px',
+      height: '240px',
     },
   },
 };
@@ -158,59 +152,161 @@ export const BookADemoStory: Story = {
     saturation: 1.0,
     brightness: 1.0,
     style: {
-      width: '420px',
-      height: '340px',
-      borderRadius: '16px',
-      overflow: 'hidden',
+      width: '360px',
+      height: '240px',
     },
   },
 };
 
 /**
  * Interactive Gallery Grid:
- * Showcasing the three prompt-requested buttons side-by-side.
+ * Showcasing the three prompt-requested buttons side-by-side without card wrappers.
  */
 export const PromptButtonsComparison: Story = {
   name: 'All Prompt Buttons Comparison',
+  parameters: {
+    layout: 'fullscreen',
+  },
   render: () => (
     <div
       style={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: '24px',
+        gap: '40px',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '32px',
         background: '#0a0d14',
         minHeight: '100vh',
+        width: '100%',
       }}
     >
       <div style={{ textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', letterSpacing: '0.1em' }}>
-          IGNITION CONTROL
+        <p style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '12px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Ignition Control
         </p>
-        <div style={{ width: '360px', height: '300px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ width: '320px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ShaderButtons variant="ignition-button" mode="dark" style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
 
       <div style={{ textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', letterSpacing: '0.1em' }}>
-          LIGHT SWITCH (ROCKER)
+        <p style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '12px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Light Switch (Rocker)
         </p>
-        <div style={{ width: '360px', height: '300px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ width: '320px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ShaderButtons variant="light-switch" mode="dark" style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
 
       <div style={{ textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', letterSpacing: '0.1em' }}>
-          BOOK A DEMO (DOT MATRIX)
+        <p style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '12px', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Book a Demo (Dot Matrix)
         </p>
-        <div style={{ width: '360px', height: '300px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ width: '320px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <ShaderButtons variant="book-a-demo" mode="dark" style={{ width: '100%', height: '100%' }} />
         </div>
       </div>
     </div>
   ),
 };
+
+/**
+ * Standalone Across Themes:
+ * Proves that ShaderButtons variants float cleanly with zero artificial card boxes
+ * or background squares, while keeping 100% of their tactile shader effects, physics,
+ * and glowing states across any background surface.
+ */
+export const StandaloneAcrossThemes: Story = {
+  name: 'Standalone Across Themes',
+  parameters: {
+    layout: 'fullscreen',
+  },
+  render: () => {
+    const themes = [
+      { name: 'Pure White Background', bg: '#ffffff', textColor: '#0f172a', mode: 'light' as const },
+      { name: 'Slate Dark Background', bg: '#0f172a', textColor: '#f8fafc', mode: 'dark' as const },
+      { name: 'Heritage Indigo Gradient', bg: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0f172a 100%)', textColor: '#f8fafc', mode: 'dark' as const },
+    ];
+
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {themes.map((theme) => (
+          <div
+            key={theme.name}
+            style={{
+              padding: '48px 32px',
+              background: theme.bg,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
+            }}
+          >
+            <h3
+              style={{
+                margin: '0 0 32px',
+                fontSize: '15px',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: theme.textColor,
+                opacity: 0.9,
+              }}
+            >
+              {theme.name} (True Standalone Buttons — Zero Card Boxes)
+            </h3>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '40px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                maxWidth: '1200px',
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Ignition Button
+                </p>
+                <div style={{ width: '280px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShaderButtons variant="ignition-button" mode={theme.mode} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Light Switch (Rocker)
+                </p>
+                <div style={{ width: '280px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShaderButtons variant="light-switch" mode={theme.mode} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Book a Demo
+                </p>
+                <div style={{ width: '280px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShaderButtons variant="book-a-demo" mode={theme.mode} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Thinking Button
+                </p>
+                <div style={{ width: '280px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShaderButtons variant="thinking-button" mode={theme.mode} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+

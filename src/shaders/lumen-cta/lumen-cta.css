@@ -18,11 +18,11 @@
   place-items: center;
   overflow: hidden;
   isolation: isolate;
-  background: #0b0821;
+  background: transparent !important;
 }
 
 .lumen-cta--light {
-  background: #f3f0fb;
+  background: transparent !important;
 }
 
 .lumen-cta__button {

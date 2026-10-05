@@ -19,23 +19,31 @@ export const SELECTED_BUTTON_STUDIES = {
 
 export type SelectedButtonStudyVariant = keyof typeof SELECTED_BUTTON_STUDIES;
 
-function focusedSource(index: number, mode: "light" | "dark", background: string) {
+function focusedSource(index: number, mode: "light" | "dark", _background: string) {
   const style = `<style data-threeui-study-focus>
+    :root, html, html[data-theme], body, body[data-theme] {
+      --page: transparent !important;
+      background: transparent !important;
+      color-scheme: normal !important;
+    }
     html, body, body > main, .button-list, .button-row[data-index="${index}"],
     .button-row[data-index="${index}"] .stage-frame,
     .button-row[data-index="${index}"] .stage { width: 100% !important; height: 100% !important; min-height: 0 !important; }
-    html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: ${background} !important; }
-    body > main { max-width: none !important; padding: 0 !important; }
+    html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: transparent !important; }
+    body > main { max-width: none !important; padding: 0 !important; background: transparent !important; }
+    .stage, .stage-frame, .artboard, .stage[class*="s"], .artboard[class*="s"], [class*="s"] { background: transparent !important; }
+    .s14, .s14.night-mode, .s7, .s16, .s18, .s2, .s3, .s4, .s8, .s9, .s10, .s11 { background: transparent !important; }
     .list-header, .list-footer, .button-row .number, .button-row .study-meta, .button-row .source { display: none !important; }
-    .button-list { display: block !important; margin: 0 !important; padding: 0 !important; list-style: none !important; }
+    .button-list { display: block !important; margin: 0 !important; padding: 0 !important; list-style: none !important; background: transparent !important; }
     .button-row { display: none !important; }
-    .button-row[data-index="${index}"] { display: block !important; border: 0 !important; padding: 0 !important; }
-    .button-row[data-index="${index}"] .stage-frame { display: block !important; overflow: hidden !important; }
-    .button-row[data-index="${index}"] .stage { display: block !important; overflow: hidden !important; }
+    .button-row[data-index="${index}"] { display: block !important; border: 0 !important; padding: 0 !important; background: transparent !important; }
+    .button-row[data-index="${index}"] .stage-frame { display: block !important; overflow: hidden !important; background: transparent !important; }
+    .button-row[data-index="${index}"] .stage { display: block !important; overflow: hidden !important; background: transparent !important; }
     .button-row[data-index="${index}"] .artboard {
       top: 50% !important;
       transform: translate(-50%, -50%) scale(var(--threeui-study-scale, 1)) !important;
       transition: none !important;
+      background: transparent !important;
     }
     .button-row[data-index="${index}"] .stage[data-hover=true] .artboard,
     .button-row[data-index="${index}"] .stage[data-pressed=true] .artboard {
@@ -65,7 +73,14 @@ function focusedSource(index: number, mode: "light" | "dark", background: string
       document.querySelector('.list-footer')?.setAttribute('aria-hidden', 'true');
     })();
   </script>`;
-  return source.replace(/<\/head>/i, `${style}</head>`).replace(/<\/body>/i, `${script}</body>`);
+  return source
+    .replaceAll("color-scheme:dark", "color-scheme:normal")
+    .replace(
+      "for(const ref of REFERENCES){",
+      `for(const ref of REFERENCES.filter(function(r){ return r.index === ${index}; })){`,
+    )
+    .replace(/<\/head>/i, `${style}</head>`)
+    .replace(/<\/body>/i, `${script}</body>`);
 }
 
 export function SelectedButtonStudies({
@@ -98,7 +113,7 @@ export function SelectedButtonStudies({
         width: "100%",
         height: "100%",
         border: 0,
-        background,
+        background: "transparent",
         filter: `hue-rotate(${hue}deg) saturate(${saturation}) brightness(${brightness})`,
         ...style,
       }}

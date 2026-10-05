@@ -9,8 +9,25 @@ import {
 import '@/components/effects/warp-field/styles.css';
 import HeroChakraWheel from './HeroChakraWheel';
 import HeroEmbers from './HeroEmbers';
-import Navbar from '../Navbar';
+import Navbar, { type NavbarSignInButtonStyle } from '../Navbar';
 import type { PageState } from '@/types/forum';
+import {
+  LiquidMetalButton,
+  RectangleButtons,
+  ShaderButtons,
+} from '@designcodeio/threeui';
+import '@designcodeio/threeui/style.css';
+import { IgnitionButton } from '@/src/components/ui/threeui/IgnitionButton';
+
+export type HeroJoinButtonStyle =
+  | 'amber-heritage'
+  | 'liquid-metal'
+  | 'bloom-outline'
+  | 'ignition'
+  | 'book-a-demo'
+  | 'tricolor-beam'
+  | 'cyber-glass'
+  | 'monochrome-minimal';
 
 export interface HeroWithWarpFieldProps {
   /** Optional warp options override (speed, opacities, variant, fov, hue, brightness, saturation, streakThickness) */
@@ -35,6 +52,16 @@ export interface HeroWithWarpFieldProps {
   onJoinClick?: () => void;
   /** Callback when OUR MISSION is clicked */
   onMissionClick?: () => void;
+  /** Style variant for the primary "JOIN THE FRONT" button */
+  joinButtonStyle?: HeroJoinButtonStyle;
+  /** Custom label for the primary Join button */
+  joinButtonLabel?: string;
+  /** Size preset for the primary Join button ('sm' | 'md' | 'lg' | 'showcase') */
+  joinButtonSize?: 'sm' | 'md' | 'lg' | 'showcase';
+  /** Style variant for the Navbar "Sign In" button */
+  signInButtonStyle?: NavbarSignInButtonStyle;
+  /** Custom label for the Navbar Sign In button */
+  signInButtonLabel?: string;
 }
 
 export default function HeroWithWarpField({
@@ -49,6 +76,11 @@ export default function HeroWithWarpField({
   subtitle = "Uniting for our nation's mission of civilizational renewal, unity, and progress across five millennia of living heritage.",
   onJoinClick,
   onMissionClick,
+  joinButtonStyle = 'ignition',
+  joinButtonLabel = 'JOIN THE FRONT',
+  joinButtonSize = 'md',
+  signInButtonStyle = 'default',
+  signInButtonLabel = 'Sign In',
 }: HeroWithWarpFieldProps) {
   const [pageState, setPageState] = React.useState<PageState>({ view: 'home' });
 
@@ -74,6 +106,8 @@ export default function HeroWithWarpField({
           onNavigate={(state) => setPageState(state)}
           onScrollToSection={scrollToSection}
           onOpenNewDiscussion={() => {}}
+          signInButtonStyle={signInButtonStyle}
+          signInButtonLabel={signInButtonLabel}
         />
       )}
 
@@ -153,25 +187,120 @@ export default function HeroWithWarpField({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 mt-6 sm:mt-7 w-full max-w-md mx-auto">
-            {/* 1. Primary Button: JOIN THE FRONT */}
-            <button
-              type="button"
-              onClick={onJoinClick}
-              className="w-full sm:w-auto px-7 py-3 rounded-md font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] cursor-pointer shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:shadow-[0_0_35px_rgba(245,158,11,0.8)] flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: '#E5A93C',
-                color: '#0A1224',
-              }}
-            >
-              <span>JOIN THE FRONT</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {/* 1. Primary Button: JOIN THE FRONT (Customizable) */}
+            {(() => {
+              switch (joinButtonStyle) {
+                case 'liquid-metal':
+                  return (
+                    <div className="w-[200px] h-[58px] relative flex items-center justify-center">
+                      <LiquidMetalButton
+                        variant="pill"
+                        text={joinButtonLabel}
+                        embedded
+                        onClick={onJoinClick}
+                      />
+                    </div>
+                  );
+                case 'bloom-outline':
+                  return (
+                    <div className="flex items-center justify-center">
+                      <RectangleButtons
+                        variant="bloom-outline-button"
+                        label={joinButtonLabel}
+                        mode="dark"
+                        style={{ minHeight: 'auto', height: 'auto' }}
+                        className="!min-h-0 !h-auto"
+                        onClick={onJoinClick}
+                      />
+                    </div>
+                  );
+                case 'ignition':
+                  return (
+                    <div className="flex items-center justify-center">
+                      <IgnitionButton
+                        label={joinButtonLabel}
+                        size={joinButtonSize}
+                        onClick={onJoinClick}
+                      />
+                    </div>
+                  );
+                case 'book-a-demo':
+                  return (
+                    <div onClick={onJoinClick} className="flex items-center justify-center cursor-pointer">
+                      <ShaderButtons
+                        variant="book-a-demo"
+                        mode="dark"
+                      />
+                    </div>
+                  );
+                case 'tricolor-beam':
+                  return (
+                    <button
+                      type="button"
+                      onClick={onJoinClick}
+                      className="w-full sm:w-auto relative group p-[2px] rounded-lg overflow-hidden transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] shadow-[0_0_25px_rgba(255,153,51,0.45)] hover:shadow-[0_0_35px_rgba(255,153,51,0.75)] cursor-pointer"
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-r from-[#FF9933] via-white to-[#138808] opacity-80 group-hover:opacity-100 transition-opacity animate-pulse" />
+                      <span className="relative px-7 py-3 rounded-[6px] bg-[#02040A] text-white font-bold text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 border border-white/10 group-hover:bg-[#060D1E]/90 transition-colors">
+                        <span>{joinButtonLabel}</span>
+                        <ArrowRight className="w-4 h-4 text-[#FF9933] group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    </button>
+                  );
+                case 'cyber-glass':
+                  return (
+                    <button
+                      type="button"
+                      onClick={onJoinClick}
+                      className="w-full sm:w-auto px-7 py-3 rounded-lg font-bold text-xs sm:text-sm tracking-wider uppercase text-cyan-200 transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] cursor-pointer border border-cyan-400/50 bg-gradient-to-r from-cyan-950/70 via-slate-900/80 to-cyan-950/70 hover:border-cyan-300 hover:text-white backdrop-blur-md shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] flex items-center justify-center gap-2"
+                    >
+                      <span>{joinButtonLabel}</span>
+                      <ArrowRight className="w-4 h-4 text-cyan-400" />
+                    </button>
+                  );
+                case 'monochrome-minimal':
+                  return (
+                    <button
+                      type="button"
+                      onClick={onJoinClick}
+                      className="w-full sm:w-auto px-7 py-3 rounded-none font-mono text-xs sm:text-sm tracking-[0.2em] uppercase text-black bg-white hover:bg-neutral-200 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.99] cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.4)] flex items-center justify-center gap-2 border border-white"
+                    >
+                      <span>{joinButtonLabel}</span>
+                      <ArrowRight className="w-4 h-4 text-black" />
+                    </button>
+                  );
+                case 'amber-heritage':
+                default:
+                  return (
+                    <button
+                      type="button"
+                      onClick={onJoinClick}
+                      className="w-full sm:w-auto px-7 py-3 rounded-md font-bold text-xs sm:text-sm tracking-wider uppercase transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] cursor-pointer shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:shadow-[0_0_35px_rgba(245,158,11,0.8)] flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: '#E5A93C',
+                        color: '#0A1224',
+                      }}
+                    >
+                      <span>{joinButtonLabel}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  );
+              }
+            })()}
 
             {/* 2. Secondary Button: OUR MISSION */}
             <button
               type="button"
               onClick={onMissionClick || (() => scrollToSection('about'))}
-              className="w-full sm:w-auto px-7 py-3 rounded-md font-bold text-xs sm:text-sm tracking-wider uppercase text-white transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] cursor-pointer border border-[#E5A93C]/80 bg-[#060D1E]/60 hover:bg-[#E5A93C]/15 backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.6)] hover:border-[#E5A93C] flex items-center justify-center gap-2"
+              className={`w-full sm:w-auto px-7 font-bold text-xs sm:text-sm tracking-wider uppercase text-white transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] cursor-pointer border border-[#E5A93C]/80 bg-[#060D1E]/60 hover:bg-[#E5A93C]/15 backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.6)] hover:border-[#E5A93C] flex items-center justify-center gap-2 ${
+                joinButtonSize === 'sm'
+                  ? 'h-[44px] rounded-[14px]'
+                  : joinButtonSize === 'lg'
+                  ? 'h-[64px] rounded-[22px]'
+                  : joinButtonSize === 'showcase'
+                  ? 'h-[78px] rounded-[24px]'
+                  : 'h-[52px] rounded-[18px]'
+              }`}
             >
               <Compass className="w-4 h-4 text-[#E5A93C]" />
               <span>OUR MISSION</span>

@@ -80,24 +80,18 @@ const STYLES = `
     --threeui-raking-light-pill-ink: #fff;
     --threeui-raking-light-pill-edge: rgba(255, 255, 255, .26);
     position: relative;
-    display: grid;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
-    min-height: 240px;
-    place-items: center;
-    overflow: hidden;
+    min-height: 0;
+    overflow: visible;
     isolation: isolate;
-    background: #160d0c;
+    background: transparent !important;
   }
   .threeui-raking-light-pill-stage::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-      radial-gradient(circle at 68% 36%, rgba(126, 66, 43, .18), transparent 31%),
-      radial-gradient(circle at 28% 74%, rgba(72, 25, 18, .28), transparent 38%),
-      linear-gradient(132deg, #120b0a 0%, #21100d 52%, #0f0909 100%);
+    display: none !important;
   }
   .threeui-raking-light-pill {
     position: relative;
@@ -139,13 +133,10 @@ const STYLES = `
   .threeui-raking-light-pill-stage[data-mode="light"] {
     --threeui-raking-light-pill-ink: #3f2c33;
     --threeui-raking-light-pill-edge: rgba(63, 44, 51, .28);
-    background: #efe6dc;
+    background: transparent !important;
   }
   .threeui-raking-light-pill-stage[data-mode="light"]::before {
-    background:
-      radial-gradient(circle at 68% 36%, rgba(162, 102, 78, .13), transparent 31%),
-      radial-gradient(circle at 28% 74%, rgba(102, 53, 49, .08), transparent 38%),
-      linear-gradient(132deg, #f4ece3 0%, #e7d9cd 52%, #f8f2eb 100%);
+    display: none !important;
   }
   .threeui-raking-light-pill-stage[data-mode="light"] .threeui-raking-light-pill:hover {
     border-color: rgba(63, 44, 51, .5);

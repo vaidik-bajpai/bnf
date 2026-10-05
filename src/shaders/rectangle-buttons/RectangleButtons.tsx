@@ -115,26 +115,27 @@ function isSelectedPageButtonVariant(variant: RectangleButtonVariant): variant i
 }
 
 const SELECTED_PAGE_BUTTON_STYLES = `
-.threeui-page-button-stage {
+.threeui-page-button-stage,
+.threeui-page-button-stage[class*="threeui-page-button-stage--"],
+.threeui-page-button-stage[data-mode="light"],
+.threeui-page-button-stage[data-mode="dark"] {
   --threeui-page-ink: #fff;
   position: relative;
-  display: grid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  min-height: 240px;
-  place-items: center;
-  overflow: hidden;
+  min-height: 0 !important;
+  overflow: visible;
   isolation: isolate;
-  background: #050505;
+  background: transparent !important;
   color: var(--threeui-page-ink);
   font-family: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
-.threeui-page-button-stage::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
+.threeui-page-button-stage::before,
+.threeui-page-button-stage[class*="threeui-page-button-stage--"]::before {
+  display: none !important;
 }
 .threeui-page-button {
   position: relative;

@@ -99,9 +99,8 @@ export const BloomOutlineDark: Story = {
     saturation: 1.0,
     brightness: 1.0,
     style: {
-      width: '420px',
-      height: '320px',
-      borderRadius: '16px',
+      width: '320px',
+      height: '160px',
     },
   },
 };
@@ -119,49 +118,160 @@ export const BloomOutlineLight: Story = {
     saturation: 1.0,
     brightness: 1.0,
     style: {
-      width: '420px',
-      height: '320px',
-      borderRadius: '16px',
+      width: '320px',
+      height: '160px',
     },
   },
 };
 
 /**
  * Side-by-Side Theme Comparison:
- * Light and dark modes rendered together with active pointer interaction.
+ * Light and dark modes rendered together with active pointer interaction without card wrappers.
  */
 export const BloomOutlineComparison: Story = {
   name: 'Theme Comparison',
+  parameters: {
+    layout: 'fullscreen',
+  },
   render: () => (
     <div
       style={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: '24px',
+        gap: '48px',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '32px',
         background: '#0d1117',
         minHeight: '100vh',
+        width: '100%',
       }}
     >
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', letterSpacing: '0.1em' }}>
-          DARK BLOOM OUTLINE
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Dark Bloom Outline
         </p>
-        <div style={{ width: '380px', height: '300px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <RectangleButtons variant="bloom-outline-button" mode="dark" style={{ width: '100%', height: '100%' }} />
+        <div style={{ width: '320px', height: '240px', overflow: 'hidden' }}>
+          <RectangleButtons
+            variant="bloom-outline-button"
+            mode="dark"
+            style={{ width: '100%', height: '100%' }}
+          />
         </div>
       </div>
 
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '8px', letterSpacing: '0.1em' }}>
-          LIGHT BLOOM OUTLINE
+      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+        <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          Light Bloom Outline
         </p>
-        <div style={{ width: '380px', height: '300px', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <RectangleButtons variant="bloom-outline-button" mode="light" style={{ width: '100%', height: '100%' }} />
+        <div style={{ width: '320px', height: '240px', overflow: 'hidden' }}>
+          <RectangleButtons
+            variant="bloom-outline-button"
+            mode="light"
+            style={{ width: '100%', height: '100%' }}
+          />
         </div>
       </div>
     </div>
   ),
 };
+
+/**
+ * Standalone Across Themes:
+ * Proves that RectangleButtons variants float cleanly with zero artificial card boxes
+ * or background squares, while keeping 100% of their tactile effects, magnetic drift,
+ * pointer ink bloom, and physical styling across any background surface.
+ */
+export const StandaloneAcrossThemes: Story = {
+  name: 'Standalone Across Themes',
+  parameters: {
+    layout: 'fullscreen',
+  },
+  render: () => {
+    const themes = [
+      { name: 'Pure White Background', bg: '#ffffff', textColor: '#0f172a', mode: 'light' as const },
+      { name: 'Slate Dark Background', bg: '#0f172a', textColor: '#f8fafc', mode: 'dark' as const },
+      { name: 'Heritage Indigo Gradient', bg: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0f172a 100%)', textColor: '#f8fafc', mode: 'dark' as const },
+    ];
+
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {themes.map((theme) => (
+          <div
+            key={theme.name}
+            style={{
+              padding: '48px 32px',
+              background: theme.bg,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
+            }}
+          >
+            <h3
+              style={{
+                margin: '0 0 32px',
+                fontSize: '15px',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: theme.textColor,
+                opacity: 0.9,
+              }}
+            >
+              {theme.name} (True Standalone Buttons — Zero Card Boxes)
+            </h3>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '40px',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                maxWidth: '1200px',
+              }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Bloom Outline
+                </p>
+                <div style={{ width: '240px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RectangleButtons variant="bloom-outline-button" mode={theme.mode} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Lumen CTA
+                </p>
+                <div style={{ width: '240px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RectangleButtons variant="lumen-cta" mode={theme.mode} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Launch Button
+                </p>
+                <div style={{ width: '240px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RectangleButtons variant="launch-button" mode={theme.mode} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: '11px', color: theme.textColor, opacity: 0.7, marginBottom: '8px' }}>
+                  Attune Thermal
+                </p>
+                <div style={{ width: '240px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RectangleButtons variant="attune-thermal" mode={theme.mode} />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import liquidMetalButtonSource from "./liquid-metal-button.html?raw";
 
@@ -7,6 +7,7 @@ export type LiquidMetalButtonVariant = "pill" | "circle" | "play";
 export type LiquidMetalButtonProps = {
   variant?: LiquidMetalButtonVariant;
   className?: string;
+  style?: CSSProperties;
   rendering?: "colored" | "monotone";
   diameter?: number;
   strokeWidth?: number;
@@ -14,6 +15,56 @@ export type LiquidMetalButtonProps = {
   embedded?: boolean;
   onClick?: () => void;
 };
+
+const STANDALONE_STYLE = `
+<style id="liquid-metal-standalone-style">
+  html, body {
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .stage {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+  }
+  #fx {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+  .plate {
+    box-shadow:
+      0 calc(var(--h) * 0.08) calc(var(--h) * 0.16) rgba(0,0,0,.45),
+      0 calc(var(--h) * 0.16) calc(var(--h) * 0.32) rgba(0,0,0,.30) !important;
+  }
+  body.hot .plate {
+    box-shadow:
+      0 calc(var(--h) * 0.10) calc(var(--h) * 0.20) rgba(0,0,0,.55),
+      0 calc(var(--h) * 0.20) calc(var(--h) * 0.40) rgba(0,0,0,.35) !important;
+  }
+  body[data-embedded="true"] .stage {
+    --pad: 0px !important;
+  }
+  body[data-embedded="true"] .plate,
+  body[data-embedded="true"] .btn,
+  body[data-embedded="true"] #fx {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 999px !important;
+  }
+</style>`;
 
 const LIQUID_METAL_BUTTON_BRIDGE = `
 <script id="liquid-metal-button-bridge">
@@ -25,14 +76,14 @@ const LIQUID_METAL_BUTTON_BRIDGE = `
     const label = btn.querySelector('.lbl');
     if(label) label.textContent = text;
     btn.setAttribute('aria-label', text || 'Button');
-    if(Number.isFinite(config.pillWidthUnits)) {
+    if(config.embedded) {
+      document.body.setAttribute('data-embedded', 'true');
+    }
+    if(config.pillWidthUnits) {
       stage.style.setProperty('--bw', 'calc(' + config.pillWidthUnits + ' * var(--u))');
     }
-    document.body.style.background = config.embedded ? '#0e0f12' : '';
-    stage.style.position = config.embedded ? 'absolute' : '';
-    stage.style.top = config.embedded ? '50%' : '';
-    stage.style.left = config.embedded ? '50%' : '';
-    stage.style.transform = config.embedded ? 'translate(-50%, -50%)' : '';
+    needResize = true;
+    drawn = null;
   });
 
   btn.addEventListener('click', () => {
@@ -43,7 +94,7 @@ const LIQUID_METAL_BUTTON_BRIDGE = `
 const CIRCLE_RUNTIME_STYLE = `
 <style id="liquid-metal-circle-variant">
   body[data-shape="circle"] .stage {
-    --h: clamp(56px, 10vmin, 72px);
+    --h: 56px;
     --bw: var(--h);
   }
 
@@ -61,13 +112,40 @@ const CIRCLE_RUNTIME_STYLE = `
   }
 </style>`;
 
+function prepareBaseSource(raw: string) {
+  return raw
+    .replace(
+      /background:\s*radial-gradient[^;]+#000;/,
+      "background: transparent !important;",
+    )
+    .replace(
+      "width:calc(var(--bw) + 2 * var(--pad));",
+      "width: 100%;",
+    )
+    .replace(
+      "height:calc(var(--bh) + 2 * var(--pad));",
+      "height: 100%;",
+    )
+    .replace(
+      "o = vec4(min(rgb, vec3(1.)), a);",
+      `
+    float edgeDist = max(abs(d.x) / (uRes.x * 0.5), abs(d.y) / (uRes.y * 0.5));
+    float edgeFade = 1.0 - smoothstep(0.60, 0.95, edgeDist);
+    o = vec4(min(rgb, vec3(1.)) * edgeFade, a * edgeFade);
+      `,
+    );
+}
+
 function sourceForVariant(variant: Exclude<LiquidMetalButtonVariant, "play">) {
+  const base = prepareBaseSource(liquidMetalButtonSource);
   if (variant === "pill") {
-    return liquidMetalButtonSource.replace("</body>", `${LIQUID_METAL_BUTTON_BRIDGE}\n</body>`);
+    return base
+      .replace("</head>", `${STANDALONE_STYLE}\n</head>`)
+      .replace("</body>", `${LIQUID_METAL_BUTTON_BRIDGE}\n</body>`);
   }
 
-  return liquidMetalButtonSource
-    .replace("</head>", `${CIRCLE_RUNTIME_STYLE}\n</head>`)
+  return base
+    .replace("</head>", `${STANDALONE_STYLE}\n${CIRCLE_RUNTIME_STYLE}\n</head>`)
     .replace("<body>", '<body data-shape="circle">')
     .replace(
       '<button class="btn" id="btn" type="button">',
@@ -76,24 +154,29 @@ function sourceForVariant(variant: Exclude<LiquidMetalButtonVariant, "play">) {
     .replace("</body>", `${LIQUID_METAL_BUTTON_BRIDGE}\n</body>`);
 }
 
-const liquidMetalPlayButtonSource = liquidMetalButtonSource
+const liquidMetalPlayButtonSource = prepareBaseSource(liquidMetalButtonSource)
   .replace(
     "--bw: calc(1407 * var(--u));",
     "--bw: var(--h);",
   )
+  .replace("</head>", `${STANDALONE_STYLE}\n</head>`)
   .replace(
     "</style>",
     `
-  /* Circular play-button adapter. The renderer and interaction graph stay
-     source-exact; only geometry, finish, outline, and accessible naming vary. */
   body{position:relative}
   .stage{
-    --h:88px;
-    position:absolute;top:50%;left:50%;
-    transform:translate(-50%,-50%);
+    --h: 88px;
+    --bw: var(--h);
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    display: grid !important;
+    place-items: center !important;
   }
-  #fx{filter:none}
-  .btn{flex-direction:column;gap:0}
+  #fx{filter:none;position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;display:block !important;}
+  .plate{width:var(--bw) !important;height:var(--h) !important;border-radius:999px !important}
+  .btn{width:var(--bw) !important;height:var(--h) !important;border-radius:999px !important;flex-direction:column;gap:0}
   .btn:focus-visible{outline:2px solid rgba(255,255,255,.68);outline-offset:4px}
   .btn .ico{
     width:calc(var(--h) * .25);height:calc(var(--h) * .25);
@@ -133,10 +216,11 @@ window.addEventListener('message', event => {
   if(event.source !== parent) return;
   const config = event.data && event.data.liquidMetalPlayButton;
   if(!config) return;
-  const diameter = Math.min(160, Math.max(72, Number(config.diameter) || 88));
+  const diameter = Math.min(160, Math.max(44, Number(config.diameter) || 88));
   const strokeWidth = Math.min(8, Math.max(1, Number(config.strokeWidth) || 3));
   const text = typeof config.text === 'string' ? config.text.slice(0, 24) : 'Play';
   stage.style.setProperty('--h', diameter + 'px');
+  stage.style.setProperty('--bw', diameter + 'px');
   playStrokeWidth = strokeWidth;
   btn.setAttribute('aria-label', text.trim() || 'Play');
   cv.style.filter = config.rendering === 'monotone' ? 'grayscale(1) contrast(1.04)' : 'none';
@@ -152,6 +236,7 @@ function clamp(value: number, min: number, max: number, fallback: number) {
 
 export function LiquidMetalButton({
   className = "",
+  style,
   variant = "pill",
   rendering = "colored",
   diameter = 88,
@@ -178,7 +263,7 @@ export function LiquidMetalButton({
     [isPlayButton, safeVariant],
   );
   const playConfig = {
-    diameter: clamp(diameter, 72, 160, 88),
+    diameter: clamp(diameter, 44, 160, 88),
     strokeWidth: clamp(strokeWidth, 1, 8, 3),
     rendering,
     text: safeText,
@@ -234,12 +319,47 @@ export function LiquidMetalButton({
     return () => window.removeEventListener("message", receiveMessage);
   }, [onClick]);
 
+  const isCircle = safeVariant === "circle";
+  const defaultDimensions: CSSProperties = embedded
+    ? {
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        display: "block",
+        borderRadius: "999px",
+        overflow: "hidden",
+      }
+    : {
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        verticalAlign: "middle",
+        width: isCircle
+          ? "130px"
+          : isPlayButton
+            ? `${playConfig.diameter + 70}px`
+            : `${Math.max(240, 140 + safeText.length * 11)}px`,
+        height: isCircle
+          ? "120px"
+          : isPlayButton
+            ? `${playConfig.diameter + 70}px`
+            : "120px",
+        background: "transparent",
+        overflow: "visible",
+      };
+
   return (
     <div
       ref={hostRef}
       className={`liquid-metal-button${className ? ` ${className}` : ""}`}
+      style={{
+        ...defaultDimensions,
+        ...style,
+      }}
       data-state={!mounted ? "paused" : ready ? "ready" : "loading"}
       data-variant={safeVariant}
+      data-embedded={embedded ? "true" : undefined}
     >
       {mounted ? (
         <iframe

@@ -5,12 +5,24 @@ import { Menu, X, Plus, User as UserIcon, LogOut } from "lucide-react";
 import { AshokaCakra, NationalEmblemLogo, TricolorStripe } from "./Symbols";
 import type { PageState } from "@/types/forum";
 import { useAuth } from "@/context/AuthContext";
+import { LiquidMetalButton, RectangleButtons } from "@designcodeio/threeui";
+import "@designcodeio/threeui/style.css";
 
-interface NavbarProps {
+export type NavbarSignInButtonStyle =
+    | 'default'
+    | 'liquid-metal'
+    | 'bloom-outline'
+    | 'amber-glow'
+    | 'glass-cyan'
+    | 'minimal-ghost';
+
+export interface NavbarProps {
     pageState: PageState;
     onNavigate: (state: PageState) => void;
     onScrollToSection: (id: string) => void;
     onOpenNewDiscussion: () => void;
+    signInButtonStyle?: NavbarSignInButtonStyle;
+    signInButtonLabel?: string;
 }
 
 export default function Navbar({
@@ -18,6 +30,8 @@ export default function Navbar({
     onNavigate,
     onScrollToSection,
     onOpenNewDiscussion,
+    signInButtonStyle = 'default',
+    signInButtonLabel = 'Sign In',
 }: NavbarProps) {
     const { user, logout, requireAuth } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -225,12 +239,73 @@ export default function Navbar({
                             </button>
                         </div>
                     ) : (
-                        <button
-                            onClick={() => requireAuth(() => { })}
-                            className="text-white/85 hover:text-white text-xs font-semibold border border-white/20 hover:border-white/40 px-3.5 py-2 rounded-xs cursor-pointer flex items-center gap-1.5 transition-colors"
-                        >
-                            <UserIcon className="w-3.5 h-3.5" /> Sign In
-                        </button>
+                        (() => {
+                            switch (signInButtonStyle) {
+                                case 'liquid-metal':
+                                    return (
+                                        <div className="w-[124px] h-[36px] relative flex items-center justify-center overflow-hidden rounded-full border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                                            <div className="w-[200px] h-[70px] absolute flex items-center justify-center scale-[0.52] origin-center">
+                                                <LiquidMetalButton
+                                                    variant="pill"
+                                                    text={signInButtonLabel}
+                                                    embedded
+                                                    onClick={() => requireAuth(() => { })}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                case 'bloom-outline':
+                                    return (
+                                        <div className="flex items-center justify-center scale-90 origin-right">
+                                            <RectangleButtons
+                                                variant="bloom-outline-button"
+                                                label={signInButtonLabel}
+                                                mode="dark"
+                                                style={{ minHeight: "auto", height: "auto" }}
+                                                className="!min-h-0 !h-auto"
+                                                onClick={() => requireAuth(() => { })}
+                                            />
+                                        </div>
+                                    );
+                                case 'amber-glow':
+                                    return (
+                                        <button
+                                            onClick={() => requireAuth(() => { })}
+                                            className="text-[#E5A93C] hover:text-[#0A1224] hover:bg-[#E5A93C] text-xs font-bold border border-[#E5A93C]/70 hover:border-[#E5A93C] px-3.5 py-1.5 rounded-full cursor-pointer flex items-center gap-1.5 transition-all duration-300 shadow-[0_0_15px_rgba(229,169,60,0.3)] hover:shadow-[0_0_22px_rgba(229,169,60,0.7)]"
+                                        >
+                                            <UserIcon className="w-3.5 h-3.5" /> {signInButtonLabel}
+                                        </button>
+                                    );
+                                case 'glass-cyan':
+                                    return (
+                                        <button
+                                            onClick={() => requireAuth(() => { })}
+                                            className="text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/60 text-xs font-semibold border border-cyan-500/40 hover:border-cyan-400 px-3.5 py-1.5 rounded-full cursor-pointer flex items-center gap-1.5 transition-all duration-300 backdrop-blur-md shadow-[0_0_15px_rgba(6,182,212,0.25)] hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]"
+                                        >
+                                            <UserIcon className="w-3.5 h-3.5 text-cyan-400" /> {signInButtonLabel}
+                                        </button>
+                                    );
+                                case 'minimal-ghost':
+                                    return (
+                                        <button
+                                            onClick={() => requireAuth(() => { })}
+                                            className="text-white/70 hover:text-white text-xs font-medium cursor-pointer flex items-center gap-1.5 transition-colors underline-offset-4 hover:underline"
+                                        >
+                                            <UserIcon className="w-3.5 h-3.5 text-white/50" /> {signInButtonLabel}
+                                        </button>
+                                    );
+                                case 'default':
+                                default:
+                                    return (
+                                        <button
+                                            onClick={() => requireAuth(() => { })}
+                                            className="text-white/85 hover:text-white text-xs font-semibold border border-white/20 hover:border-white/40 px-3.5 py-2 rounded-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                                        >
+                                            <UserIcon className="w-3.5 h-3.5" /> {signInButtonLabel}
+                                        </button>
+                                    );
+                            }
+                        })()
                     )}
 
                     {/* Mobile Menu Toggle */}

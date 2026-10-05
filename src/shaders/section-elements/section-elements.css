@@ -263,12 +263,12 @@
    shade that white cast on charcoal, since white on paper is nothing.
  * ---------------------------------------------------------------- */
 .section-element--glass-button[data-mode="light"] {
-  background: #eeedeb;
+  background: transparent !important;
   color: rgba(17, 17, 17, 0.95);
 }
 
 .section-element--glass-button[data-mode="light"]::before {
-  background: rgba(17, 17, 17, 0.06);
+  background: transparent !important;
 }
 
 .section-element--glass-button[data-mode="light"] .section-button {

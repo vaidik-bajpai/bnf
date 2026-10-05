@@ -1,0 +1,63 @@
+import React, { useEffect, useRef } from "react";
+
+export interface AmberHalftoneProps extends React.HTMLAttributes<HTMLDivElement> {
+  speed?: number;
+  dotSize?: number;
+}
+
+export function AmberHalftone({
+  speed = 1,
+  dotSize = 10,
+  className = "",
+  style,
+  ...props
+}: AmberHalftoneProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    let width = (canvas.width = canvas.parentElement?.clientWidth || 800);
+    let height = (canvas.height = canvas.parentElement?.clientHeight || 600);
+    let t = 0;
+
+    const render = () => {
+      ctx.fillStyle = "#120c02";
+      ctx.fillRect(0, 0, width, height);
+
+      t += 0.03 * speed;
+      ctx.fillStyle = "#f59e0b";
+
+      for (let x = dotSize; x < width; x += dotSize * 2) {
+        for (let y = dotSize; y < height; y += dotSize * 2) {
+          const wave = Math.sin(x * 0.015 + t) * Math.cos(y * 0.015 - t * 0.8);
+          const r = Math.max(0.4, (wave + 1) * (dotSize * 0.45));
+
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    animId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animId);
+  }, [speed, dotSize]);
+
+  return (
+    <div
+      className={`relative overflow-hidden w-full h-full min-h-[300px] bg-[#120c02] ${className}`}
+      style={style}
+      {...props}
+    >
+      <canvas ref={canvasRef} className="block w-full h-full" />
+    </div>
+  );
+}
